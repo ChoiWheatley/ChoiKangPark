@@ -10,10 +10,18 @@ struct inode{
 	int double_indirect;
 };
 
+struct super{
+	unsigned a:32;
+};
+
+struct block_num{//블록 넘버 11비트로 수정해야
+	unsigned n:11;
+};
+
 struct myfs{
 	unsigned boot:16;
-	long long super_inode:1024;
-	long long super_block:512;//초기화됨?
+	struct super super_inode[32];
+	struct super super_block[16];//초기화됨?
 	struct inode inodelist[512];
 	struct direct datablock[1024];
 };
