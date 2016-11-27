@@ -47,7 +47,7 @@ struct dir{
 
 
 union all{
-	struct dir dt;
+	struct dir d;
 	struct direct dr;
 	struct single_indirect si;
 };

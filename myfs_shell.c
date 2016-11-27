@@ -49,6 +49,12 @@ int main(){
 	char tmp_input[80] = {0};
 	char command_option[6][15] = {0};
 
+	printf("[");
+	for(int i=0;i<top;i++){
+		for(int j=0;j<4;j++)
+		printf("%c",m.datablock[now[i]].d.now.name[j]);
+	}
+	printf("]$");
 	fgets(tmp_input, 80, stdin);        //먼저 최대 80문자를 임시로 tmp_input에 때려박는다.
 	tmp_input[strlen(tmp_input)-1]=0;
 
@@ -106,6 +112,8 @@ int main(){
 			call_mystate(command_option);
 		else if(strcmp(command_option[0],"mytree")==0)
 			call_mytree(command_option);
+		else if(strcmp(command_option[0],"byebye")==0)
+			exit(1);
 	}
 	return 0;
 }
