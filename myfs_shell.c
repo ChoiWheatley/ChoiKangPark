@@ -23,7 +23,7 @@ void call_myshowfile(char command_option[6][15]);
 //민석
 void call_mycp(char command_option[6][15]);
 void call_mycpto(char command_option[6][15]);
-void call_mycpfrom(char command_option[6][15]);
+void call_mycpfrom(char command_option[6][15],struct myfs* m);
 void call_mymv(char command_option[6][15]);
 
 
@@ -93,7 +93,7 @@ int main(){
 		else if(strcmp(command_option[0],"mycpto")==0)
 			call_mycpto(command_option);
 		else if(strcmp(command_option[0],"mycpfrom")==0)
-			call_mycpfrom(command_option);
+			call_mycpfrom(command_option,struct myfs* m);
 		else if(strcmp(command_option[0],"mymkdir")==0)
 			call_mymkdir(command_option);
 		else if(strcmp(command_option[0],"myrmdir")==0)
@@ -170,9 +170,53 @@ void call_mycp(char command_option[6][15]) {
 void call_mycpto(char command_option[6][15]) {
 	printf("mycpto");
 }
-void call_mycpfrom(char command_option[6][15]) {
-	printf("mycpfrom");
+void call_mycpfrom(char command_option[6][15],struct myfs* m) {
+	int void_block = print_super_block(*m),void_inode = print_super_inode(*m);
+	int b=0,db=0,size=0,new_block,single_full=0,sb=0;
+	FILE* fc = fopen("command_option[1]","r");
+	if(fc==NULL) return;
+	else{
+		while((c=getc(fc))!=EOF){
+			m->datablock[void_block].dr.block[db]=c;
+			fseek(fc,1,SEEK_CUR);
+			b++; //다이렉트 블록의 크기 체크
+			if(b==128){
+				if(db==102){
+					if(sb==0)
+					new_double_block = m->inodelist[void_inode].double_indirect = print_super_block(*m);
+					new_single_block = print_super_block(*m);
+				for(int i=0;i<10;i++){
+					if((new_single_block>>i&1)==1)
+						m.datablock[new_double_block] += pow(2,n);
+					n++;   //double에 10비트 할당
+					if(n==32){ 
+						n=0;
+						new_single_block = print_super_block(*m);
+					}
+				}
+				db=0; sb++;
+				}
+				if(db==0)
+				new_single_block = m->inodelist[void_inode].single_indirect = print_super_block();
+				new_direct_block = print_super_block();
+				for(int i=0;i<10;i++){
+					if((new_direct_block>>i&1)==1)
+						m.datablock[new_single_block] += pow(2,n);
+					n++;   //single에 10비트 할당
+					if(n==32){ 
+						n=0;
+						new_direct_block = print_super_block();
+					}
+				}
+				db++; //10비트 한번 넣을때마다 하나씩 올라감
+				b=0;
+				}
+			if(sb==102&&db==102)return; //single이랑 double 다 차면 끝
+			}
+		}
+	}
 }
+
 void call_mymv(char command_option[6][15]) {
 	printf("mymv");
 }
