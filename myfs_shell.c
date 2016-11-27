@@ -3,7 +3,7 @@
 #include <string.h>
 #include <time.h>
 #include "struct_new.h" // 구조체
-void call_mypwd(char command_option[6][15]);
+void call_mypwd(char command_option[6][15],struct myfs* m);
 void call_mystate(char command_option[6][15]);
 
 void call_myls(char command_option[6][15]);
@@ -28,11 +28,11 @@ void call_mymv(char command_option[6][15]);
 
 
 
+char top=1;
+short now[100]={0};
 int main(){
 	FILE* fp;
 	struct myfs m;
-	short now[100]={0};
-	char top=1;
 	fp = fopen("myfs.c","r");
 	if(fp==NULL){
 		printf("error : no myfs");
@@ -40,8 +40,8 @@ int main(){
 		exit(1);
 	}
 	else{
-			fread(&m,sizeof(m),1,fp);
-		}
+		fread(&m,sizeof(m),1,fp);
+	}
 
 	int i = 0;
 	int j = 0;
@@ -52,7 +52,7 @@ int main(){
 	printf("[");
 	for(int i=0;i<top;i++){
 		for(int j=0;j<4;j++)
-		printf("%c",m.datablock[now[i]].d.now.name[j]);
+			printf("%c",m.datablock[now[i]].d.now.name[j]);
 	}
 	printf("]$");
 	fgets(tmp_input, 80, stdin);        //먼저 최대 80문자를 임시로 tmp_input에 때려박는다.
@@ -85,7 +85,7 @@ int main(){
 		else if(strcmp(command_option[0],"myshowfile")==0)
 			call_myshowfile(command_option);
 		else if(strcmp(command_option[0],"mypwd")==0)
-			call_mypwd(command_option);
+			call_mypwd(command_option,&m);
 		else if(strcmp(command_option[0],"mycd")==0)
 			call_mycd(command_option);
 		else if(strcmp(command_option[0],"mycp")==0)
@@ -119,8 +119,11 @@ int main(){
 }
 
 
-void call_mypwd(char command_option[6][15]) {
-	printf("mypwd");
+void call_mypwd(char command_option[6][15],struct myfs* m) {
+	for(int i=0;i<top;i++){
+		for(int j=0;j<4;j++)
+			printf("%c",m->datablock[now[i]].d.now.name[j]);
+	}
 }
 void call_mystate(char command_option[6][15]) {
 	printf("mystate");
