@@ -1,9 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
-<<<<<<< HEAD
 #include <string.h>
 #include <time.h>
 #include "struct_new.h" // 구조체
+
+struct time_now{
+	char year;
+	char mon;
+	char day;
+	char hour;
+	char min;
+	char sec;
+};
 
 void call_mypwd(char command_option[6][15]);
 void call_mystate(char command_option[6][15]);
@@ -30,27 +38,53 @@ void call_mymv(char command_option[6][15]);
 
 
 
-
 int main(){
-//	FILE* fp;
-//	fp = fopen("myfs.c","r");
-//	if(fp==NULL){
-//		printf("error : no myfs");
-//		exit(1);
-//	}
-	char command_option[6][15];
-	char tmp_input[80];
-	scanf("%s",command_option[0]);
-//char command_option[6][15];
-// command_option[0] == strcmp 들어갈 아이들
-	if(strncmp(command_option[0],"my",2)) //앞에 my라는 말이 붙으면
-	{
-		printf("strncmp 들어옴");
-		system(command_option[0]);
-		printf("strncmp 끝");
+	FILE* fp;
+	fp = fopen("myfs.c","r");
+	if(fp==NULL){
+		printf("error : no myfs");
+		fclose(fp);
+		exit(1);
 	}
+	else{
+		if(fseek(fp,0,SEEK_END),ftell(fp)==7){//시간 구조체 정보 하나만 들어있으면
+			//root만든 시간 읽어오기
+			struct time_now now; 
+			fseek(fp,0,SEEK_SET);
+			fread(&now,sizeof(now),1,fp);
+//			printf("%d",now.hour);
+		}
+	}
+
+	int i = 0;
+	int j = 0;
+	int all = 0;
+	char tmp_input[80] = {0};
+	char command_option[6][15] = {0};
+
+	fgets(tmp_input, 80, stdin);        //먼저 최대 80문자를 임시로 tmp_input에 때려박는다.
+	tmp_input[strlen(tmp_input)-1]=0;
+
+	if(strncmp(tmp_input,"my",2)) //앞에 my라는 말이 붙으면
+		system(tmp_input);
 	else // "my"가 없으면
 	{
+		while(tmp_input[all] != 0)
+		{
+			if(tmp_input[all]==' '){
+				i++;
+				all++;
+				j=0;
+				continue;
+			}
+			else{
+				command_option[i][j]=tmp_input[all];
+				j++;
+				all++;
+			}
+		}
+		i=0;j=0;all=0;
+
 		if(strcmp(command_option[0],"myls")==0)
 			call_myls(command_option);
 		else if(strcmp(command_option[0],"mycat")==0)
@@ -144,32 +178,3 @@ void call_mycpfrom(char command_option[6][15]) {
 void call_mymv(char command_option[6][15]) {
 	printf("mymv");
 }
-=======
-struct time_now{
-	char year;
-	char mon;
-	char day;
-	char hour;
-	char min;
-	char sec;
-};
-int main(){
-	FILE* fp;
-	fp = fopen("myfs.c","r");
-	if(fp==NULL){
-		printf("error : no myfs");
-		fclose(fp);
-		exit(1);
-	}
-	else{
-		if(fseek(fp,0,SEEK_END),ftell(fp)==7){//시간 구조체 정보 하나만 들어있으면
-			//root만든 시간 읽어오기
-			struct time_now now; 
-			fseek(fp,0,SEEK_SET);
-			fread(&now,sizeof(now),1,fp);
-			printf("%d",now.hour);
-		}
-	}
-	return 0;
-}
->>>>>>> f2b3039b785c654af91c92faa05f6e398453d067
