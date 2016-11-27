@@ -1,12 +1,21 @@
 #include <stdio.h>
 #include <stdbool.h>
+struct time_now{
+	char year;
+	char mon;
+	char day;
+	char hour;
+	char min;
+	char sec;
+};
+
 struct inode{
 	bool d_f;		//디렉토리-1/파일-0
-	//int time구조체가 들어감
+	struct time_now n;       //time구조체가 들어감
 	int size;		//파일 사이즈
 	int direct;		//블록 번호
 	int single_indirect; 	//single indirect의 정보는 inode list인지,
-								//single indirect의 크기는 128인지, 아니면 정해져 있는지, 1바이트 넣어도 127바이트 낭비해도됨?
+	//single indirect의 크기는 128인지, 아니면 정해져 있는지, 1바이트 넣어도 127바이트 낭비해도됨?
 	int double_indirect;
 };
 struct file{
@@ -40,7 +49,7 @@ struct dir{
 union all{
 	struct dir dt;
 	struct direct dr;
-	struct single_indirect;
+	struct single_indirect si;
 };
 struct myfs{
 	unsigned boot:16;
