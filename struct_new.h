@@ -23,7 +23,7 @@ struct block_num{//블록 넘버 10비트로 수정해야
 };
 
 struct single_indirect{
-	block_num block[32];
+	struct block_num block[32];
 };
 
 struct super{
