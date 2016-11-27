@@ -3,6 +3,11 @@
 #include <string.h>
 #include <time.h>
 #include "struct_new.h" // 구조체
+
+int print_super_inode (struct myfs);
+int print_super_block (struct myfs);
+
+
 void call_mypwd(char command_option[6][15],struct myfs* m);
 void call_mystate(char command_option[6][15]);
 
@@ -114,6 +119,11 @@ int main(){
 			call_mytree(command_option);
 		else if(strcmp(command_option[0],"byebye")==0)
 			exit(1);
+
+		else if(strcmp(command_option[0], "myprint_inode") == 0)
+			printf("blank inode number : %d\n",print_super_inode(m));
+		else if(strcmp(command_option[0], "myprint_block") == 0)
+			printf("blank superblock number : %d\n", print_super_block(m));
 	}
 	return 0;
 }
@@ -175,4 +185,32 @@ void call_mycpfrom(char command_option[6][15]) {
 }
 void call_mymv(char command_option[6][15]) {
 	printf("mymv");
+}
+
+int print_super_inode(struct myfs m)
+{
+	int i = 0;
+	for (i = 0; ((m.super_inode[i/32].a >> i%32) && 0x1) != 0; i++)
+	{
+		if(i == 512)
+		{
+			printf("ERROR!!! inode 꽉참.\n");
+			return -1;
+		}
+	}
+
+	return i;
+}
+int print_super_block(struct myfs m)
+{
+	int i = 0;
+	for (i = 0; ((m.super_block[i/32].a >> i%32) && 0x1) != 0; i++)
+	{
+		if (i == 1024)
+		{
+			printf("ERROR!!! data block 꽉참.\n");
+			return -1;
+		}
+	}
+	return i;
 }
