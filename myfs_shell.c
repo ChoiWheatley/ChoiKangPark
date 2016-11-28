@@ -4,6 +4,7 @@
 #include <time.h>
 #include <stdbool.h>
 #include "struct_new.h" // 구조체
+#include <math.h>
 char top=1;
 short now[100]={0};
 
@@ -102,7 +103,7 @@ int main(){
 		else if(strcmp(command_option[0],"mycpto")==0)
 			call_mycpto(command_option);
 		else if(strcmp(command_option[0],"mycpfrom")==0)
-			call_mycpfrom(command_option,struct myfs* m);
+			call_mycpfrom(command_option,&m);
 		else if(strcmp(command_option[0],"mymkdir")==0)
 			call_mymkdir(command_option);
 		else if(strcmp(command_option[0],"myrmdir")==0)
@@ -177,10 +178,10 @@ void call_mycp(char command_option[6][15]) {
 void call_mycpto(char command_option[6][15]) {
 	printf("mycpto");
 }
-<<<<<<< HEAD
 void call_mycpfrom(char command_option[6][15],struct myfs* m) {
 	int void_block = print_super_block(*m),void_inode = print_super_inode(*m);
-	int b=0,db=0,size=0,new_block,single_full=0,sb=0;
+	int c,new_double_block,new_single_block;
+	int b=0,db=0,size=0,new_block,single_full=0,sb=0,sk=0,dk=0,n=0,new_direct_block;
 	FILE* fc = fopen("command_option[1]","r");
 	if(fc==NULL) return;
 	else{
@@ -192,39 +193,41 @@ void call_mycpfrom(char command_option[6][15],struct myfs* m) {
 			if(b==128){
 				if(db==102){
 					if(sb==0)
-					new_double_block = m->inodelist[void_inode].double_indirect = print_super_block(*m);
+						new_double_block = m->inodelist[void_inode].double_indirect = print_super_block(*m);
 					new_single_block = print_super_block(*m);
-				for(int i=0;i<10;i++){
-					if((new_single_block>>i&1)==1)
-						m.datablock[new_double_block] += pow(2,n);
-					n++;   //double에 10비트 할당
-					if(n==32){ 
-						n=0;
-						new_single_block = print_super_block(*m);
+					for(int i=0;i<10;i++){
+						if((new_single_block>>i&1)==1)
+							m->datablock[new_double_block].si.block[sk].n += pow(2,n);
+						n++;   //double에 10비트 할당
+						if(n==32){ 
+							n=0;
+							//new_single_block = print_super_block(*m);
+							sk++;
+						}
 					}
-				}
-				db=0; sb++;
+					db=0; sb++;
 				}
 				if(db==0)
-				new_single_block = m->inodelist[void_inode].single_indirect = print_super_block(*m);
+					new_single_block = m->inodelist[void_inode].single_indirect = print_super_block(*m);
 				new_direct_block = print_super_block(*m);
 				for(int i=0;i<10;i++){
 					if((new_direct_block>>i&1)==1)
-						m.datablock[new_single_block] += pow(2,n);
+						m->datablock[new_single_block].si.block[dk].n += pow(2,n);
 					n++;   //single에 10비트 할당
 					if(n==32){ 
 						n=0;
-						new_direct_block = print_super_block(*m);
+						//new_direct_block = print_super_block(*m);
+						dk++;
 					}
 				}
 				db++; //10비트 한번 넣을때마다 하나씩 올라감
 				b=0;
-				}
-			if(sb==102&&db==102)return; //single이랑 double 다 차면 끝
 			}
-		m.inodelist[void_inode].size=size;
+			if(sb==102&&db==102)return; //single이랑 double 다 차면 끝
 		}
+		m->inodelist[void_inode].size=size;
 	}
+	fclose(fc);
 }
 
 void call_mymv(char command_option[6][15]) {
@@ -284,3 +287,11 @@ struct time_now now_time (void) {
 	//	printf("%d/%d/%d %d:%d:%d",new.year,new.mon,new.day,new.hour,new.min,new.sec);
 	return new;
 }
+
+int find_inode (struct myfs * m, char name[4]) {
+	//현재 디렉에 데이터블럭에 들어가
+	//그러면 file들이 있을테니까 22개??
+	//file.name애들이랑 네임만 비교
+	//같ㅇㄴ놈의 아이노드를 리턴 (int형으로)
+}
+//file이름 받아서 inode 번호 할당받고 , 현 디렉에 접근해서 file이름이랑 아이노드 넣어줌
