@@ -8,11 +8,13 @@
 char top=1;
 short now[100]={0};
 
-int print_super_inode (struct myfs);
-int print_super_block (struct myfs);
+int print_super_inode (struct myfs* m);
+int print_super_block (struct myfs* m);
 
 struct time_now now_time (void); // 현재시간을 리턴
 void init_inode (struct myfs * m,int flag_d_f); // 사이즈 없음 나중에해야됌
+
+
 
 ///////////////////////////////////// call 함수 ///////////////////////////////////
 void call_mypwd(char command_option[6][15],struct myfs* m);
@@ -51,77 +53,85 @@ int main(){
 		fread(&m,sizeof(m),1,fp);
 	}
 	//while(명령어)
-	int i = 0;
-	int j = 0;
-	int all = 0;
-	char tmp_input[80] = {0};
-	char command_option[6][15] = {0};
-
-	printf("[");
-	for(int i=0;i<top;i++){
-		for(int j=0;j<4;j++)
-			printf("%c",m.datablock[now[i]].d.now.name[j]);
-	}
-	printf(" ]$ ");
-	fgets(tmp_input, 80, stdin);        //먼저 최대 80문자를 임시로 tmp_input에 때려박는다.
-	tmp_input[strlen(tmp_input)-1]=0;
-
-	if(strcmp(tmp_input,"byebye")==0)
-		exit(1);
-	if(strncmp(tmp_input,"my",2)) //앞에 my라는 말이 붙으면
-		system(tmp_input);
-	else // "my"가 없으면
+	while(1)
 	{
-		while(tmp_input[all] != 0)
-		{
-			if(tmp_input[all]==' '){
-				i++;
-				all++;
-				j=0;
-				continue;
-			}
-			else{
-				command_option[i][j]=tmp_input[all];
-				j++;
-				all++;
-			}
-		}
-		i=0;j=0;all=0;
+		int i = 0;
+		int j = 0;
+		int all = 0;
+		char tmp_input[80] = {0};
+		char command_option[6][15] = {0};
 
-		if(strcmp(command_option[0],"myls")==0)
-			call_myls(command_option);
-		else if(strcmp(command_option[0],"mycat")==0)
-			call_mycat(command_option);
-		else if(strcmp(command_option[0],"myshowfile")==0)
-			call_myshowfile(command_option);
-		else if(strcmp(command_option[0],"mypwd")==0)
-			call_mypwd(command_option,&m);
-		else if(strcmp(command_option[0],"mycd")==0)
-			call_mycd(command_option);
-		else if(strcmp(command_option[0],"mycp")==0)
-			call_mycp(command_option);
-		else if(strcmp(command_option[0],"mycpto")==0)
-			call_mycpto(command_option);
-		else if(strcmp(command_option[0],"mycpfrom")==0)
-			call_mycpfrom(command_option,&m);
-		else if(strcmp(command_option[0],"mymkdir")==0)
-			call_mymkdir(command_option);
-		else if(strcmp(command_option[0],"myrmdir")==0)
-			call_myrmdir(command_option);
-		else if(strcmp(command_option[0],"myrm")==0)
-			call_myrm(command_option);
-		else if(strcmp(command_option[0],"mymv")==0)
-			call_mymv(command_option);
-		else if(strcmp(command_option[0],"mytouch")==0)
-			call_mytouch(command_option);
-		else if(strcmp(command_option[0],"myshowinode")==0)
-			call_myshowinode(command_option);
-		else if(strcmp(command_option[0],"myshowblock")==0)
-			call_myshowblock(command_option);
-		else if(strcmp(command_option[0],"mystate")==0)
-			call_mystate(command_option);
-		else if(strcmp(command_option[0],"mytree")==0)
-			call_mytree(command_option);
+		printf("[");
+		for(int i=0;i<top;i++){
+			for(int j=0;j<4;j++)
+				printf("%c",m.datablock[now[i]].d.now.name[j]);
+		}
+		printf(" ]$ ");
+		fgets(tmp_input, 80, stdin);        //먼저 최대 80문자를 임시로 tmp_input에 때려박는다.
+		tmp_input[strlen(tmp_input)-1]=0;
+
+		if(strcmp(tmp_input,"byebye")==0)
+			exit(1);
+		if(strncmp(tmp_input,"my",2)) //앞에 my라는 말이 붙으면
+			system(tmp_input);
+		else // "my"가 없으면
+		{
+			while(tmp_input[all] != 0)
+			{
+				if(tmp_input[all]==' '){
+					i++;
+					all++;
+					j=0;
+					continue;
+				}
+				else{
+					command_option[i][j]=tmp_input[all];
+					j++;
+					all++;
+				}
+			}
+			i=0;j=0;all=0;
+
+			if(strcmp(command_option[0],"myls")==0)
+				call_myls(command_option);
+			else if(strcmp(command_option[0],"mycat")==0)
+				call_mycat(command_option);
+			else if(strcmp(command_option[0],"myshowfile")==0)
+				call_myshowfile(command_option);
+			else if(strcmp(command_option[0],"mypwd")==0)
+				call_mypwd(command_option,&m);
+			else if(strcmp(command_option[0],"mycd")==0)
+				call_mycd(command_option);
+			else if(strcmp(command_option[0],"mycp")==0)
+				call_mycp(command_option);
+			else if(strcmp(command_option[0],"mycpto")==0)
+				call_mycpto(command_option);
+			else if(strcmp(command_option[0],"mycpfrom")==0)
+				call_mycpfrom(command_option,&m);
+			else if(strcmp(command_option[0],"mymkdir")==0)
+				call_mymkdir(command_option);
+			else if(strcmp(command_option[0],"myrmdir")==0)
+				call_myrmdir(command_option);
+			else if(strcmp(command_option[0],"myrm")==0)
+				call_myrm(command_option);
+			else if(strcmp(command_option[0],"mymv")==0)
+				call_mymv(command_option);
+			else if(strcmp(command_option[0],"mytouch")==0)
+				call_mytouch(command_option);
+			else if(strcmp(command_option[0],"myshowinode")==0)
+				call_myshowinode(command_option);
+			else if(strcmp(command_option[0],"myshowblock")==0)
+				call_myshowblock(command_option);
+			else if(strcmp(command_option[0],"mystate")==0)
+				call_mystate(command_option);
+			else if(strcmp(command_option[0],"mytree")==0)
+				call_mytree(command_option);
+			////////////////////////////////
+			else if(strcmp(command_option[0], "myprintinode")==0)
+				printf("%d\n", print_super_inode(&m));
+			else if(strcmp(command_option[0], "myprintblock")==0)
+				printf("%d\n", print_super_block(&m));
+		}
 	}
 	return 0;
 }
@@ -179,7 +189,7 @@ void call_mycpto(char command_option[6][15]) {
 	printf("mycpto");
 }
 void call_mycpfrom(char command_option[6][15],struct myfs* m) {
-	int void_block = print_super_block(*m),void_inode = print_super_inode(*m);
+	int void_block = print_super_block(m),void_inode = print_super_inode(m);
 	int c,new_double_block,new_single_block;
 	int b=0,db=0,size=0,new_block,single_full=0,sb=0,sk=0,dk=0,n=0,new_direct_block;
 	FILE* fc = fopen("command_option[1]","r");
@@ -193,8 +203,8 @@ void call_mycpfrom(char command_option[6][15],struct myfs* m) {
 			if(b==128){
 				if(db==102){
 					if(sb==0)
-						new_double_block = m->inodelist[void_inode].double_indirect = print_super_block(*m);
-					new_single_block = print_super_block(*m);
+						new_double_block = m->inodelist[void_inode].double_indirect = print_super_block(m);
+					new_single_block = print_super_block(m);
 					for(int i=0;i<10;i++){
 						if((new_single_block>>i&1)==1)
 							m->datablock[new_double_block].si.block[sk].n += pow(2,n);
@@ -208,15 +218,15 @@ void call_mycpfrom(char command_option[6][15],struct myfs* m) {
 					db=0; sb++;
 				}
 				if(db==0)
-					new_single_block = m->inodelist[void_inode].single_indirect = print_super_block(*m);
-				new_direct_block = print_super_block(*m);
+					new_single_block = m->inodelist[void_inode].single_indirect = print_super_block(m);
+				new_direct_block = print_super_block(m);
 				for(int i=0;i<10;i++){
 					if((new_direct_block>>i&1)==1)
 						m->datablock[new_single_block].si.block[dk].n += pow(2,n);
 					n++;   //single에 10비트 할당
 					if(n==32){ 
 						n=0;
-						//new_direct_block = print_super_block(*m);
+						//new_direct_block = print_super_block(m);
 						dk++;
 					}
 				}
@@ -235,9 +245,9 @@ void call_mymv(char command_option[6][15]) {
 }
 ///////////////////////////////////// call 함수 ///////////////////////////////////
 
-int print_super_inode(struct myfs m) {
+int print_super_inode(struct myfs* m) {
 	int i = 0;
-	for (i = 0; ((m.super_inode[i/32].a >> i%32) && 0x1) != 0; i++)
+	for (i = 0; ((m->super_inode[i/32].a >> (i%32)) & 0x1) != 0; i++)
 	{
 		if(i == 512)
 		{
@@ -245,12 +255,13 @@ int print_super_inode(struct myfs m) {
 			return -1;
 		}
 	}
+	m->super_inode[i/32].a += pow(2, i%32);		//i번째에 0이기 때문에 그 번째에 1을 더해준다.
 	return i;
 }
 
-int print_super_block(struct myfs m) {
+int print_super_block(struct myfs* m) {
 	int i = 0;
-	for (i = 0; ((m.super_block[i/32].a >> i%32) && 0x1) != 0; i++)
+	for (i = 0; ((m->super_block[i/32].a >> i%32) & 0x1) != 0; i++)
 	{
 		if (i == 1024)
 		{
@@ -258,14 +269,15 @@ int print_super_block(struct myfs m) {
 			return -1;
 		}
 	}
+	m->super_block[i/32].a += pow(2,i%32);		//i번째에 0이라서 그 번째에 1을 더해준다.
 	return i;
 }
 
 void init_inode (struct myfs * m,int flag_d_f) { // 사이즈 없음 나중에해야됌
-	int void_inode=print_super_inode(*m);
+	int void_inode=print_super_inode(m);
 	m->inodelist[void_inode].d_f=flag_d_f; // flag 1이면 dir 
 	m->inodelist[void_inode].n = now_time(); // 시간할당
-	int void_block = print_super_block(*m);
+	int void_block = print_super_block(m);
 	//m->inodelist[void_inode].direct = void_block; // 빈 블록을 direct블록에 할당 
 	// 사이즈랑 싱글 , 더블을 알 수 없음;
 }
