@@ -14,7 +14,8 @@ int print_super_block (struct myfs* m);
 struct time_now now_time (void); // 현재시간을 리턴
 void init_inode (struct myfs * m,int flag_d_f); // 사이즈 없음 나중에해야됌
 
-
+int remove_super_inode (unsigned int inode_number, struct myfs* m);		//rm, rmdir명령어
+int remove_super_block (unsigned int block_number, struct myfs* m);		//정수형 숫자를 받아들여 그 번째의 인덱스의 연결을 끊어버린다.	
 
 ///////////////////////////////////// call 함수 ///////////////////////////////////
 void call_mypwd(char command_option[6][15],struct myfs* m);
@@ -58,6 +59,7 @@ int main(){
 		int i = 0;
 		int j = 0;
 		int all = 0;
+		int option_integer[6] = {0};
 		char tmp_input[80] = {0};
 		char command_option[6][15] = {0};
 
@@ -90,7 +92,13 @@ int main(){
 					all++;
 				}
 			}
+
 			i=0;j=0;all=0;
+
+			for (i = 1; i < 6; i++){
+				sscanf(command_option[i], "%d", option_integer + i);		//옵션으로 들어간 인자가 숫자라면 option_integer로 저장한다.
+			}
+
 
 			if(strcmp(command_option[0],"myls")==0)
 				call_myls(command_option);
@@ -131,6 +139,12 @@ int main(){
 				printf("%d\n", print_super_inode(&m));
 			else if(strcmp(command_option[0], "myprintblock")==0)
 				printf("%d\n", print_super_block(&m));
+			else if(strcmp(command_option[0], "myrminode")==0){
+				printf("%dth inode deleted.\n", remove_super_inode(option_integer[1], &m));
+			}
+			else if(strcmp(command_option[0], "myrmblock")==0){
+				printf("%dth block deleted.\n", remove_super_block(option_integer[1], &m));
+			}
 		}
 	}
 	return 0;
@@ -247,30 +261,47 @@ void call_mymv(char command_option[6][15]) {
 
 int print_super_inode(struct myfs* m) {
 	int i = 0;
-	for (i = 0; ((m->super_inode[i/32].a >> (i%32)) & 0x1) != 0; i++)
-	{
+	for (i = 0; ((m->super_inode[i/32].a >> (i%32)) & 0x1) != 0; i++){
 		if(i == 512)
-		{
-			printf("ERROR!!! inode 꽉참.\n");
 			return -1;
-		}
 	}
 	m->super_inode[i/32].a += pow(2, i%32);		//i번째에 0이기 때문에 그 번째에 1을 더해준다.
+	for (int k = 0; k < 50; k++){
+		printf("%d", (m->super_inode[k/32].a >> (k%32)) & 0x1);
+	}
+	printf("\n");
 	return i;
 }
 
 int print_super_block(struct myfs* m) {
 	int i = 0;
-	for (i = 0; ((m->super_block[i/32].a >> i%32) & 0x1) != 0; i++)
-	{
+	for (i = 0; ((m->super_block[i/32].a >> i%32) & 0x1) != 0; i++){
 		if (i == 1024)
-		{
-			printf("ERROR!!! data block 꽉참.\n");
 			return -1;
-		}
 	}
 	m->super_block[i/32].a += pow(2,i%32);		//i번째에 0이라서 그 번째에 1을 더해준다.
+	for (int k = 0; k < 50; k++){
+		printf("%d", (m->super_block[k/32].a >> (k%32) & 0x1));
+	}
 	return i;
+}
+
+int remove_super_inode (unsigned int inode_number, struct myfs* m){
+	if (((m->super_inode[inode_number/32].a >> (inode_number%32)) & 0x1) == 0)
+		return -1;
+	else{
+		m->super_inode[inode_number/32].a -= pow(2, (inode_number)%32);
+		return inode_number;
+	}
+}
+
+int remove_super_block (unsigned int block_number, struct myfs* m){
+	if (((m->super_block[block_number/32].a >> (block_number%32)) & 0x1) == 0)
+		return -1;
+	else{
+		m->super_block[block_number/32].a -= pow(2, (block_number)%32);
+		return block_number;
+	}
 }
 
 void init_inode (struct myfs * m,int flag_d_f) { // 사이즈 없음 나중에해야됌
@@ -307,3 +338,5 @@ int find_inode (struct myfs * m, char name[4]) {
 	//같ㅇㄴ놈의 아이노드를 리턴 (int형으로)
 }
 //file이름 받아서 inode 번호 할당받고 , 현 디렉에 접근해서 file이름이랑 아이노드 넣어줌
+
+
