@@ -20,6 +20,7 @@ int main(){
 	if(fp==NULL){//파일 없으면 널포인터 반환
 		fp=fopen("myfs.c","w");
 		struct myfs m={0};
+		m.super_block[0].a += 1;
 		m.super_inode[0].a += 1;//아이노드 넘버
 		m.inodelist[1].d_f=1;//파일인지 디렉토리인지
 		m.inodelist[1].n = new;

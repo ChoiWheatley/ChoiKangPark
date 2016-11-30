@@ -1,5 +1,15 @@
 #include <stdio.h>
 #include <stdbool.h>
+typedef struct block{  //cat,cp와 같이 블럭을 읽을 때 먼저 다이렉트 블럭 넘버들만 리스트로 만든다
+	int num;
+	struct block* next;
+}block;
+
+typedef struct block_list{
+	block *front;
+	block *back;
+}block_list;
+
 struct time_now{
 	char year;
 	char mon;
@@ -20,7 +30,7 @@ struct inode{
 };
 struct file{
 	char name[4];
-	unsigned inode:9;
+	short inode;
 };
 
 struct direct{
