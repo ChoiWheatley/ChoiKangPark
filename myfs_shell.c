@@ -37,8 +37,8 @@ void call_mymkdir(char command_option[6][15],struct myfs * m);
 void call_myrmdir(char command_option[6][15]);
 void call_myrm(char command_option[6][15]);
 //상은
-void call_mytouch(char command_option[6][15]);
-void call_myshowinode(char command_option[6][15]);
+void call_mytouch(char command_option[6][15], struct myfs* m);
+void call_myshowinode(char command_option[6][15],struct myfs m);
 void call_myshowblock(char command_option[6][15],struct myfs m);
 
 void call_myshowfile(char command_option[6][15]);
@@ -73,6 +73,8 @@ int main(){
 		for(int i=0;i<top;i++){
 			for(int j=0;j<4;j++)
 				printf("%c",m.datablock[now[i]].d.now.name[j]);
+			if (top != 1)
+				printf("/");
 		}
 		printf(" ]$ ");
 		fgets(tmp_input, 80, stdin);        //먼저 최대 80문자를 임시로 tmp_input에 때려박는다.
@@ -129,11 +131,11 @@ int main(){
 			else if(strcmp(command_option[0],"mymv")==0)
 				call_mymv(command_option);
 			else if(strcmp(command_option[0],"mytouch")==0)
-				call_mytouch(command_option);
+				call_mytouch(command_option, &m);
 			else if(strcmp(command_option[0],"myshowinode")==0)
-				call_myshowinode(command_option);
+				call_myshowinode(command_option, m);
 			else if(strcmp(command_option[0],"myshowblock")==0)
-				call_myshowblock(command_option,m);
+				call_myshowblock(command_option, m);
 			else if(strcmp(command_option[0],"mystate")==0)
 				call_mystate(command_option);
 			else if(strcmp(command_option[0],"mytree")==0)
@@ -188,11 +190,44 @@ void call_myrm(char command_option[6][15]) {
 	printf("myrm");
 }
 //상은
-void call_mytouch(char command_option[6][15]) {
-	printf("mytouch");
+void call_mytouch(char command_option[6][15], struct myfs* m) {
+	//현재 디렉토리에서 같은이름의 파일 찾기
+	int i = 0;
+	int flag = 0;		//0 = 없음. 1 = 있음
+	for (i = 0; i < 22; i++){
+		if (strcmp(command_option[1], m->datablock[now[top-1]].d.files[i].name) == 0){		//같은 이름의 파일이 있다면.
+			m->inodelist[m->datablock[now[top-1]].d.files[i].inode].n = now_time();
+			flag = 1;
+		}
+	}
+	if (flag != 1){		//새로운 0바이트짜리 파일을 만든다.
+		char new_name[4];
+		sscanf(command_option[1], "%4s", new_name);
+		struct file new_file;
+		for (i = 0; i < 4; i++){
+			new_file.name[i] = new_name[i];
+		}
+		new_file.inode = print_super_inode(m);
+	}
 }
-void call_myshowinode(char command_option[6][15]) {
-	printf("myshowinode");
+void call_myshowinode(char command_option[6][15], struct myfs m) {
+	int inode_number;
+	if (sscanf(command_option[1], "%d", &inode_number) != 1){
+		printf("ERROR");
+	}
+	else{
+		printf("file type : ");
+		if (m.inodelist[inode_number].d_f == 1)
+			printf("directory\n");
+		else
+			printf("regular file\n");
+		printf("file size : %d byte\n", m.inodelist[inode_number].size);
+		printf("modified time : %d/%d/%d %d:%d:%d\n", m.inodelist[inode_number].n.year, m.inodelist[inode_number].n.mon, m.inodelist[inode_number].n.day, m.inodelist[inode_number].n.hour, m.inodelist[inode_number].n.min, m.inodelist[inode_number].n.sec);
+		printf("data block list : %d, ", m.inodelist[inode_number].direct);
+		//
+		//single indirect block과 double indirect block은 남겨둔다.
+		printf("\n");
+	}
 }
 void call_myshowblock(char command_option[6][15],struct myfs m) {
 	int n;
@@ -297,9 +332,6 @@ int print_super_inode(struct myfs* m) {
 			return -1;
 	}
 	m->super_inode[i/32].a += pow(2, i%32);     //i번째에 0이기 때문에 그 번째에 1을 더해준다.
-	for (int k = 0; k < 50; k++){
-		printf("%d", (m->super_inode[k/32].a >> (k%32)) & 0x1);
-	}
 	printf("\n");
 	return i;
 }
@@ -311,9 +343,7 @@ int print_super_block(struct myfs* m) {
 			return -1;
 	}
 	m->super_block[i/32].a += pow(2,i%32);      //i번째에 0이라서 그 번째에 1을 더해준다.
-	for (int k = 0; k < 50; k++){
-		printf("%d", (m->super_block[k/32].a >> (k%32) & 0x1));
-	}
+	printf("\n");
 	return i;
 }
 
