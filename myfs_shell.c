@@ -8,6 +8,12 @@
 char top=1;
 short now[100]={0};
 
+int print_super_inode (struct myfs*);
+int print_super_block (struct myfs*);
+
+void block_linked(struct myfs*,block_list*,int); 
+void push(block_list*,int);
+//void clean_block_list(block_list*);
 int print_super_inode (struct myfs* m);
 int print_super_block (struct myfs* m);
 
@@ -32,7 +38,7 @@ void call_myrm(char command_option[6][15]);
 //상은
 void call_mytouch(char command_option[6][15]);
 void call_myshowinode(char command_option[6][15]);
-void call_myshowblock(char command_option[6][15]);
+void call_myshowblock(struct myfs m,char command_option[6][15]);
 
 void call_myshowfile(char command_option[6][15]);
 //민석
@@ -53,7 +59,6 @@ int main(){
 	else{
 		fread(&m,sizeof(m),1,fp);
 	}
-	//while(명령어)
 	while(1)
 	{
 		int i = 0;
@@ -129,11 +134,12 @@ int main(){
 			else if(strcmp(command_option[0],"myshowinode")==0)
 				call_myshowinode(command_option);
 			else if(strcmp(command_option[0],"myshowblock")==0)
-				call_myshowblock(command_option);
+				call_myshowblock(m,command_option);
 			else if(strcmp(command_option[0],"mystate")==0)
 				call_mystate(command_option);
 			else if(strcmp(command_option[0],"mytree")==0)
 				call_mytree(command_option);
+<<<<<<< HEAD
 			////////////////////////////////
 			else if(strcmp(command_option[0], "myprintinode")==0)
 				printf("%d\n", print_super_inode(&m));
@@ -145,7 +151,10 @@ int main(){
 			else if(strcmp(command_option[0], "myrmblock")==0){
 				printf("%dth block deleted.\n", remove_super_block(option_integer[1], &m));
 			}
+=======
+>>>>>>> 73178357016df5d7d30e0f53c25599beb9865cce
 		}
+		printf("\n");
 	}
 	return 0;
 }
@@ -189,8 +198,12 @@ void call_mytouch(char command_option[6][15]) {
 void call_myshowinode(char command_option[6][15]) {
 	printf("myshowinode");
 }
-void call_myshowblock(char command_option[6][15]) {
-	printf("myshowblock");
+void call_myshowblock(struct myfs m,char command_option[6][15]) {
+	int n;
+	sscanf(command_option[1],"%d",&n);
+	for(int i=0;i<128;i++)
+		printf("%c",m.datablock[n].dr.block[i]);
+	return;
 }
 void call_myshowfile(char command_option[6][15]) {
 	printf("myshowfile");
@@ -203,15 +216,14 @@ void call_mycpto(char command_option[6][15]) {
 	printf("mycpto");
 }
 void call_mycpfrom(char command_option[6][15],struct myfs* m) {
-	int void_block = print_super_block(m),void_inode = print_super_inode(m);
+	int new_direct_block = print_super_block(m),void_inode = print_super_inode(m);
 	int c,new_double_block,new_single_block;
-	int b=0,db=0,size=0,new_block,single_full=0,sb=0,sk=0,dk=0,n=0,new_direct_block;
-	FILE* fc = fopen("command_option[1]","r");
+	int b=0,db=0,size=0,new_block,single_full=0,sb=0,sk=0,dk=0,n=0;
+	FILE* fc = fopen(command_option[1],"r");
 	if(fc==NULL) return;
 	else{
 		while((c=getc(fc))!=EOF){
-			m->datablock[void_block].dr.block[db]=c;
-			fseek(fc,1,SEEK_CUR);
+			m->datablock[new_direct_block].dr.block[b]=c;//void_block -> new_direct_block으로 바꿔봄
 			b++; //다이렉트 블록의 크기 체크
 			size++;//파일 크기 체크
 			if(b==128){
@@ -231,12 +243,12 @@ void call_mycpfrom(char command_option[6][15],struct myfs* m) {
 					}
 					db=0; sb++;
 				}
-				if(db==0)
+				if(db==0&&sb==0)
 					new_single_block = m->inodelist[void_inode].single_indirect = print_super_block(m);
 				new_direct_block = print_super_block(m);
 				for(int i=0;i<10;i++){
 					if((new_direct_block>>i&1)==1)
-						m->datablock[new_single_block].si.block[dk].n += pow(2,n);
+						m->datablock[new_single_block].si.block[dk%32].n += pow(2,n);
 					n++;   //single에 10비트 할당
 					if(n==32){ 
 						n=0;
@@ -254,13 +266,15 @@ void call_mycpfrom(char command_option[6][15],struct myfs* m) {
 	fclose(fc);
 }
 
+
 void call_mymv(char command_option[6][15]) {
 	printf("mymv");
 }
 ///////////////////////////////////// call 함수 ///////////////////////////////////
 
-int print_super_inode(struct myfs* m) {
+int print_super_inode(struct myfs *m) {
 	int i = 0;
+<<<<<<< HEAD
 	for (i = 0; ((m->super_inode[i/32].a >> (i%32)) & 0x1) != 0; i++){
 		if(i == 512)
 			return -1;
@@ -270,14 +284,27 @@ int print_super_inode(struct myfs* m) {
 		printf("%d", (m->super_inode[k/32].a >> (k%32)) & 0x1);
 	}
 	printf("\n");
+=======
+	for (i = 1; ((m->super_inode[i/32].a >> (i%32)) & 0x1) != 0; i++)
+	{
+		if(i==512)return -1;
+	}
+	m->super_inode[i/32].a += pow(2, i%32);
+>>>>>>> 73178357016df5d7d30e0f53c25599beb9865cce
 	return i;
 }
 
 int print_super_block(struct myfs* m) {
 	int i = 0;
+<<<<<<< HEAD
 	for (i = 0; ((m->super_block[i/32].a >> i%32) & 0x1) != 0; i++){
 		if (i == 1024)
 			return -1;
+=======
+	for (i = 0; ((m->super_block[i/32].a >> (i%32)) & 0x1) != 0; i++)
+	{
+		if(i==1024) return -1;
+>>>>>>> 73178357016df5d7d30e0f53c25599beb9865cce
 	}
 	m->super_block[i/32].a += pow(2,i%32);		//i번째에 0이라서 그 번째에 1을 더해준다.
 	for (int k = 0; k < 50; k++){
@@ -339,4 +366,52 @@ int find_inode (struct myfs * m, char name[4]) {
 }
 //file이름 받아서 inode 번호 할당받고 , 현 디렉에 접근해서 file이름이랑 아이노드 넣어줌
 
+<<<<<<< HEAD
 
+=======
+void block_linked(struct myfs *m,block_list *b,int inode){
+	int l=0,n;
+	block * tmp = (block*)calloc(1,sizeof(block));
+	tmp->num = m->inodelist[inode].direct;
+	b->back = tmp;
+	b->front = tmp;
+	if(m->inodelist[inode].single_indirect!=0){
+		for(int i=0;i<ceil((m->inodelist[inode].size)/(double)128)-1;i++){
+			for(int j=0;j<10;j++){
+				if((m->datablock[m->inodelist[inode].single_indirect].si.block[i].n>>n&1)==1)
+					l += pow(2,j);
+				n++;
+				if(n==32){n=0;}
+			}
+			push(b,l);
+			l=0;
+		}
+	}
+	if(m->inodelist[inode].double_indirect!=0){
+		for(int i=0;i<ceil((m->inodelist[inode].size)/(double)128)-1;i++){
+			for(int j=0;j<10;j++){
+				if((m->datablock[m->inodelist[inode].single_indirect].si.block[i].n>>n&1)==1)
+					l += pow(2,j);
+				n++;
+				if(n==32){n=0;}
+			}
+			push(b,l);
+			l=0;
+		}
+	}
+}
+
+//이 블록 리스트 다쓰고 초기화 해주기필요없나
+
+void push(block_list* b,int n){
+	block *tmp = (block*)calloc(1,sizeof(block));
+	tmp->num = n;
+	b->back->next = tmp;
+	b->back = b->back->next;
+}	
+
+//void clean_block_list(block_list* b){
+//	b->front=NULL;
+//	b->back=NULL;
+//}
+>>>>>>> 73178357016df5d7d30e0f53c25599beb9865cce
