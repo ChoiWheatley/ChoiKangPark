@@ -41,7 +41,7 @@ void call_mytouch(char command_option[6][15], struct myfs* m);
 void call_myshowinode(char command_option[6][15],struct myfs m);
 void call_myshowblock(char command_option[6][15],struct myfs m);
 
-void call_myshowfile(char command_option[6][15]);
+void call_myshowfile(char command_option[6][15], struct myfs m);
 //민석
 void call_mycp(char command_option[6][15]);
 void call_mycpto(char command_option[6][15]);
@@ -111,7 +111,7 @@ int main(){
 			else if(strcmp(command_option[0],"mycat")==0)
 				call_mycat(command_option);
 			else if(strcmp(command_option[0],"myshowfile")==0)
-				call_myshowfile(command_option);
+				call_myshowfile(command_option, m);
 			else if(strcmp(command_option[0],"mypwd")==0)
 				call_mypwd(command_option,&m);
 			else if(strcmp(command_option[0],"mycd")==0)
@@ -191,6 +191,7 @@ void call_myrm(char command_option[6][15]) {
 }
 //상은
 void call_mytouch(char command_option[6][15], struct myfs* m) {
+	//////////////////////////////////////////////////////////아직 제대로 돌아가는지 확인 안했다.
 	//현재 디렉토리에서 같은이름의 파일 찾기
 	int i = 0;
 	int flag = 0;		//0 = 없음. 1 = 있음
@@ -236,8 +237,33 @@ void call_myshowblock(char command_option[6][15],struct myfs m) {
 		printf("%c",m.datablock[n].dr.block[i]);
 	return ;
 }
-void call_myshowfile(char command_option[6][15]) {
-	printf("myshowfile");
+void call_myshowfile(char command_option[][15], struct myfs m) {
+	int i = 0, flag = 0;		//flag = 1 : 있다. flag = 0 : 없다.
+	int input_operand_one, input_operand_two;
+	char file_name[4];
+
+	sscanf(command_option[1], "%d", &input_operand_one);	
+	sscanf(command_option[2], "%d", &input_operand_two);	
+	sscanf(command_option[3], "%4s", file_name);
+
+	//파일이 있는지 없는지부터 찾기
+	for (i = 0; i < 22; i++){
+		if (strcmp(command_option[3], m.datablock[now[top-1]].d.files[i].name) == 0){
+			flag = 1;
+			break;
+		}
+	}
+	if (flag == 0){
+		printf("ERROR\n");
+		return;
+	}
+	else{			//highlight : 이 파일의 아이노드번호를 통해 아이노드 리스트를 접속하고 사이즈를 알아내어 데이터블록에 접근한다.
+		if(m.inodelist[m.datablock[now[top-1]].d.files[i].inode].size <= 128){		//DirectBlock 하나.
+			for (i = input_operand_one; i < input_operand_two; i++){
+				printf("%c", m.datablock[now[top-1]].dr.block[i]);					//????????????
+			}
+		}
+	}
 }
 //민석
 void call_mycp(char command_option[6][15]) {

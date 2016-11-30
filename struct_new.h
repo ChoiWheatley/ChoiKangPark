@@ -11,12 +11,12 @@ typedef struct block_list{
 }block_list;
 
 struct time_now{
-	char year;
-	char mon;
-	char day;
-	char hour;
-	char min;
-	char sec;
+	int year;
+	int mon;
+	int day;
+	int hour;
+	int min;
+	int sec;
 };
 
 struct inode{
