@@ -8,17 +8,14 @@
 char top=1;
 short now[100]={0};
 
-<<<<<<< HEAD
 int print_super_inode (struct myfs*);
 int print_super_block (struct myfs*);
 
 void block_linked(struct myfs*,block_list*,int); 
 void push(block_list*,int);
 //void clean_block_list(block_list*);
-=======
 int print_super_inode (struct myfs* m);
 int print_super_block (struct myfs* m);
->>>>>>> origin
 
 struct time_now now_time (void); // 현재시간을 리턴
 void init_inode (struct myfs * m,int flag_d_f); // 사이즈 없음 나중에해야됌
@@ -61,13 +58,8 @@ int main(){
 	else{
 		fread(&m,sizeof(m),1,fp);
 	}
-<<<<<<< HEAD
-	while(1){
-=======
-	//while(명령어)
 	while(1)
 	{
->>>>>>> origin
 		int i = 0;
 		int j = 0;
 		int all = 0;
@@ -134,26 +126,13 @@ int main(){
 			else if(strcmp(command_option[0],"myshowinode")==0)
 				call_myshowinode(command_option);
 			else if(strcmp(command_option[0],"myshowblock")==0)
-<<<<<<< HEAD
 				call_myshowblock(m,command_option);
-=======
-				call_myshowblock(command_option);
->>>>>>> origin
 			else if(strcmp(command_option[0],"mystate")==0)
 				call_mystate(command_option);
 			else if(strcmp(command_option[0],"mytree")==0)
 				call_mytree(command_option);
-<<<<<<< HEAD
 		}
 		printf("\n");
-=======
-			////////////////////////////////
-			else if(strcmp(command_option[0], "myprintinode")==0)
-				printf("%d\n", print_super_inode(&m));
-			else if(strcmp(command_option[0], "myprintblock")==0)
-				printf("%d\n", print_super_block(&m));
-		}
->>>>>>> origin
 	}
 	return 0;
 }
@@ -215,11 +194,7 @@ void call_mycpto(char command_option[6][15]) {
 	printf("mycpto");
 }
 void call_mycpfrom(char command_option[6][15],struct myfs* m) {
-<<<<<<< HEAD
 	int new_direct_block = print_super_block(m),void_inode = print_super_inode(m);
-=======
-	int void_block = print_super_block(m),void_inode = print_super_inode(m);
->>>>>>> origin
 	int c,new_double_block,new_single_block;
 	int b=0,db=0,size=0,new_block,single_full=0,sb=0,sk=0,dk=0,n=0;
 	FILE* fc = fopen(command_option[1],"r");
@@ -246,16 +221,12 @@ void call_mycpfrom(char command_option[6][15],struct myfs* m) {
 					}
 					db=0; sb++;
 				}
-<<<<<<< HEAD
 				if(db==0&&sb==0)
-=======
-				if(db==0)
->>>>>>> origin
 					new_single_block = m->inodelist[void_inode].single_indirect = print_super_block(m);
 				new_direct_block = print_super_block(m);
 				for(int i=0;i<10;i++){
 					if((new_direct_block>>i&1)==1)
-						m->datablock[new_single_block].si.block[dk].n += pow(2,n);
+						m->datablock[new_single_block].si.block[dk%32].n += pow(2,n);
 					n++;   //single에 10비트 할당
 					if(n==32){ 
 						n=0;
@@ -273,56 +244,29 @@ void call_mycpfrom(char command_option[6][15],struct myfs* m) {
 	fclose(fc);
 }
 
+
 void call_mymv(char command_option[6][15]) {
 	printf("mymv");
 }
 ///////////////////////////////////// call 함수 ///////////////////////////////////
 
-<<<<<<< HEAD
 int print_super_inode(struct myfs *m) {
 	int i = 0;
-	for (i = 0; ((m->super_inode[i/32].a >> i%32) && 0x1) != 0; i++)
-=======
-int print_super_inode(struct myfs* m) {
-	int i = 0;
-	for (i = 0; ((m->super_inode[i/32].a >> (i%32)) & 0x1) != 0; i++)
->>>>>>> origin
+	for (i = 1; ((m->super_inode[i/32].a >> (i%32)) & 0x1) != 0; i++)
 	{
-		if(i == 512)
-		{
-			printf("ERROR!!! inode 꽉참.\n");
-			return -1;
-		}
+		if(i==512)return -1;
 	}
-<<<<<<< HEAD
 	m->super_inode[i/32].a += pow(2, i%32);
-	return i;
-}
-
-int print_super_block(struct myfs *m) {
-	int i = 0;
-	for (i = 0; ((m->super_block[i/32].a >> i%32) && 0x1) != 0; i++)
-=======
-	m->super_inode[i/32].a += pow(2, i%32);		//i번째에 0이기 때문에 그 번째에 1을 더해준다.
 	return i;
 }
 
 int print_super_block(struct myfs* m) {
 	int i = 0;
-	for (i = 0; ((m->super_block[i/32].a >> i%32) & 0x1) != 0; i++)
->>>>>>> origin
+	for (i = 0; ((m->super_block[i/32].a >> (i%32)) & 0x1) != 0; i++)
 	{
-		if (i == 1024)
-		{
-			printf("ERROR!!! data block 꽉참.\n");
-			return -1;
-		}
+		if(i==1024) return -1;
 	}
-<<<<<<< HEAD
-	m->super_block[i/32].a += pow(2,i%32);
-=======
 	m->super_block[i/32].a += pow(2,i%32);		//i번째에 0이라서 그 번째에 1을 더해준다.
->>>>>>> origin
 	return i;
 }
 
@@ -368,7 +312,7 @@ void block_linked(struct myfs *m,block_list *b,int inode){
 	b->back = tmp;
 	b->front = tmp;
 	if(m->inodelist[inode].single_indirect!=0){
-		for(int i=0;i<ceil((m->inodelist[inode].size)||/(double)128)-1;i++){
+		for(int i=0;i<ceil((m->inodelist[inode].size)/(double)128)-1;i++){
 			for(int j=0;j<10;j++){
 				if((m->datablock[m->inodelist[inode].single_indirect].si.block[i].n>>n&1)==1)
 					l += pow(2,j);
