@@ -21,7 +21,7 @@ int main(){
 		fp=fopen("myfs.c","w");
 		struct myfs m={0};
 		m.super_block[0].a += 1;
-		m.super_inode[0].a += 1;//아이노드 넘버
+		m.super_inode[0].a += 2;//아이노드 넘버
 		m.inodelist[1].d_f=1;//파일인지 디렉토리인지
 		m.inodelist[1].n = new;
 		m.datablock[0].d.now.name[0]='/';

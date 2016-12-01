@@ -63,8 +63,8 @@ union all{
 };
 struct myfs{
 	unsigned boot:16;
-	struct super super_inode[32];
-	struct super super_block[16];//초기화됨?
+	struct super super_inode[16];
+	struct super super_block[32];//초기화됨?
 	struct inode inodelist[512];
 	union all datablock[1024];
 };
