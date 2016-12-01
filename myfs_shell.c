@@ -30,7 +30,7 @@ void call_mypwd(char command_option[6][15],struct myfs* m);
 void call_mystate(char command_option[6][15]);
 
 void call_myls(char command_option[6][15]);
-void call_mycat(char command_option[6][15]);
+void call_mycat(struct myfs *m,char command_option[6][15]);
 void call_mytree(char command_option[6][15]);
 void call_mycd(char command_option[6][15]);
 //승현
@@ -110,7 +110,7 @@ int main(){
 			if(strcmp(command_option[0],"myls")==0)
 				call_myls(command_option);
 			else if(strcmp(command_option[0],"mycat")==0)
-				call_mycat(command_option);
+				call_mycat(&m,command_option);
 			else if(strcmp(command_option[0],"myshowfile")==0)
 				call_myshowfile(command_option);
 			else if(strcmp(command_option[0],"mypwd")==0)
@@ -168,8 +168,18 @@ void call_mystate(char command_option[6][15]) {
 void call_myls(char command_option[6][15]) {
 	printf("myls");
 }
-void call_mycat(char command_option[6][15]) {
-	printf("mycat");
+void call_mycat(struct myfs *m,char command_option[6][15]) {
+	char name[5];
+	int flag_d_f=0; // files
+	strncpy(name,command_option[1],4);
+	int inode = allocation_file_inode(m,name,flag_d_f);
+
+	block_list b={0};
+	block_linked(m,&b,inode);
+	for(block* i = b.front;i!=NULL;i = i->next){
+		for(int j=0;j<128;j++)
+			printf("%c",m->datablock[i->num].dr.block[j]);
+	}
 }
 void call_mytree(char command_option[6][15]) {
 	printf("mytree");
@@ -213,10 +223,12 @@ void call_mytouch(char command_option[6][15], struct myfs* m) {
 }
 void call_myshowinode(char command_option[6][15], struct myfs m) {
 	int inode_number;
+	block_list b={0};
 	if (sscanf(command_option[1], "%d", &inode_number) != 1){
 		printf("ERROR");
 	}
 	else{
+		block_linked(&m,&b,inode_number);
 		printf("file type : ");
 		if (m.inodelist[inode_number].d_f == 1)
 			printf("directory\n");
@@ -224,9 +236,10 @@ void call_myshowinode(char command_option[6][15], struct myfs m) {
 			printf("regular file\n");
 		printf("file size : %d byte\n", m.inodelist[inode_number].size);
 		printf("modified time : %d/%d/%d %d:%d:%d\n", m.inodelist[inode_number].n.year, m.inodelist[inode_number].n.mon, m.inodelist[inode_number].n.day, m.inodelist[inode_number].n.hour, m.inodelist[inode_number].n.min, m.inodelist[inode_number].n.sec);
-		printf("data block list : %d, ", m.inodelist[inode_number].direct);
-		//
-		//single indirect block과 double indirect block은 남겨둔다.
+		printf("data block list : ");
+	for(block* i = b.front;i!=NULL;i = i->next)
+		printf("%d,",i->num);
+		//modified time 수정해야,year이 이상
 		printf("\n");
 	}
 }
@@ -293,7 +306,7 @@ void call_mycpfrom(char command_option[6][15],struct myfs* m) {
 						m->datablock[new_single_block].si.block[n/32].n += pow(2,n%32);
 					n++;   //single에 10비트 할당
 				}
-			printf("%d %d %d %d %d %d %d\n",b,db,sb,m->inodelist[2].direct,m->inodelist[2].single_indirect,m->inodelist[2].double_indirect,db);
+			/*printf("%d %d %d %d %d %d %d\n",b,db,sb,m->inodelist[2].direct,m->inodelist[2].single_indirect,m->inodelist[2].double_indirect,db);
 					for(int l=0;l<32;l++){
 						for(int k=0;k<32;k++){
 							printf("%d",m->datablock[new_single_block].si.block[l].n>>k&1);
@@ -302,7 +315,7 @@ void call_mycpfrom(char command_option[6][15],struct myfs* m) {
 						}
 					}
 					printf("\n");
-					o=0; 
+					o=0;*/ 
 				db++;//10비트 한번 넣을때마다 하나씩 올라감
 				b=0;
 			}
@@ -353,7 +366,6 @@ int print_super_block(struct myfs* m) {
 		if(i==1023) return -1;
 	}
 	m->super_block[i/32].a += pow(2,i%32);      //i번째에 0이라서 그 번째에 1을 더해준다.
-	printf("\n");
 	return i;
 }
 
@@ -394,8 +406,10 @@ int allocation_file_inode (struct myfs * m,char name[4],int flag_d_f) { // file�
 		}		
 		//이 이상이면 싱글 더블 추가해야함
 	}
-	else
+	else{
 		printf("이미 있는 파일임\n");
+		return check;
+	}
 	return 0;
 }
 //빈 아이노드 숫자를 받아서 아이노드 리스트를 채우는것(단, 초기라서 direct뿐임)
@@ -433,58 +447,60 @@ int find_now_dir_datablock(struct myfs * m) { //이 리턴값으로 들어가면
 void block_linked(struct myfs *m,block_list *b,int inode){
 	int l=0,n=0,fin,sn=0; // n은 모두 블럭에서 열을 담당
 	int s_num=0,k=0,sk=0,bcnt=0; // k는 모두 블럭에서 행을 담당
-	int db=0;
-	printf("%d\n",m->inodelist[inode].size);
+	int db=0,o=0;
 	block * tmp = (block*)calloc(1,sizeof(block));
 	tmp->num = m->inodelist[inode].direct;
 	b->back = tmp;
 	b->front = tmp;
 	fin = ceil((m->inodelist[inode].size)/(double)128)-1;
+	printf("%d\n",m->inodelist[inode].single_indirect);
 	if(m->inodelist[inode].single_indirect!=0){
-		while(fin!=0&&bcnt!=102){
-			/*printf("%d %d %d %d %d %d %d\n",b,db,sb,m->inodelist[2].direct,new_single_block,new_direct_block,db);
+		/*printf("%d\n",m->inodelist[inode].single_indirect);
 					for(int l=0;l<32;l++){
 						for(int k=0;k<32;k++){
-							printf("%d",m->datablock[new_single_block].si.block[l].n>>k&1);
+							printf("%d",m->datablock[2].si.block[l].n>>k&1);
 							o++;
 							if(o==10){o=0;printf("\n");}
 						}
 					}
 					printf("\n");
-					o=0; */
+					o=0;*/ 
+		while(fin!=0&&bcnt!=102){
 			for(int j=0;j<10;j++){
-				if((m->datablock[m->inodelist[inode].single_indirect].si.block[k].n>>n&1)==1){
+				if((m->datablock[m->inodelist[inode].single_indirect].si.block[n/32].n>>(n%32)&1)==1){
 					l += pow(2,j);
 				}
-				n++; db++;
-				if(db==102)break;
-				if(n==32){n=0;k++;}
+				n++; 
 			}
+			//	printf("******l%d*************\n",l);
 			push(b,l);
 			bcnt++;
 			l=0;
 			fin--;
 		}
 	}
-	n=0; k=0;
+	n=0;bcnt=0;
 	if(m->inodelist[inode].double_indirect!=0){
+		while(fin!=0){
 		for(int i=0;i<10;i++){
-			if((m->datablock[m->inodelist[inode].double_indirect].si.block[i].n>>sn&1)==1)
+			if((m->datablock[m->inodelist[inode].double_indirect].si.block[sn/32].n>>(sn%32)&1)==1)
 				s_num += pow(2,i);
 			sn++;
-			if(sn==32){sn=0;sk++;}
 		} //double블록에서 single 번호 읽어오기
-		while(k!=32){
+		while(bcnt!=102&&fin!=0){
 			for(int j=0;j<10;j++){
-				if((m->datablock[s_num].si.block[k].n>>n&1)==1)
+				if((m->datablock[s_num].si.block[n/32].n>>(n%32)&1)==1)
 					l += pow(2,j);
 				n++;
-				if(n==32){n=0;k++;}
 			}
 			push(b,l);
 			fin--;
 			l=0;
+			bcnt++;
 		}
+		bcnt=0;n=0;
+		s_num=0;
+	}
 	}
 }
 //이 블록 리스트 다 쓰고 초기화 해주기 필요없나
