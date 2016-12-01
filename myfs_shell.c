@@ -5,20 +5,9 @@
 #include <stdbool.h>
 #include "struct_new.h" // 구조체
 #include <math.h>
-<<<<<<< HEAD
-char top=1;
-short now[100]={0};
 
-
-void block_linked(struct myfs*,block_list*,int); 
-void push(block_list*,int);
-//void clean_block_list(block_list*);
-int print_super_inode (struct myfs* m);
-int print_super_block (struct myfs* m);
-=======
 short top=1; // stack?
 short now[100]={0}; // 현재 디렉의 아이노드 번호
->>>>>>> 87238e29aed47ace8dd78a3e34dca24cc7d07b5d
 
 struct time_now now_time (void); // 현재시간을 리턴
 
@@ -264,21 +253,15 @@ void call_mycpto(struct myfs *m,char command_option[6][15]) {
 }
 
 void call_mycpfrom(char command_option[6][15],struct myfs* m) {
-<<<<<<< HEAD
-	int new_direct_block,void_inode = print_super_inode(m);
-=======
 	char name[5];
 	int flag_d_f=0; // files
 	strncpy(name,command_option[2],4);
 	int void_inode = allocation_file_inode(m,name,flag_d_f);
-	int new_direct_block = print_super_block(m);
->>>>>>> 87238e29aed47ace8dd78a3e34dca24cc7d07b5d
+	int new_direct_block = m->inodelist[void_inode].direct = print_super_block(m); 
 	int c,new_double_block,new_single_block;
 	int b=0,db=0,size=0,new_block,sb=0,n=0;
 	int o=0,v=0;
 	FILE* fc = fopen(command_option[1],"r");
-	new_direct_block = print_super_block(m);
-	m->inodelist[void_inode].direct = new_direct_block; 
 	if(fc==NULL) return;
 	else{
 		while((c=getc(fc))!=EOF){
@@ -290,24 +273,12 @@ void call_mycpfrom(char command_option[6][15],struct myfs* m) {
 					if(sb==0) //더블 첫 할당
 						new_double_block = m->inodelist[void_inode].double_indirect = print_super_block(m);
 					new_single_block = print_super_block(m);
-<<<<<<< HEAD
 					if(new_double_block==-1||new_single_block==-1)break;
 					n=0;//이전 싱글 정보 초기화
 					for(int r=0;r<10;r++){
 						if((new_single_block>>r&1)==1)
 							m->datablock[new_double_block].si.block[v/32].n += pow(2,v%32);
 						v++;   //double에 10비트 할당
-=======
-					for(int i=0;i<10;i++){
-						if((new_single_block>>i&1)==1)
-							m->datablock[new_double_block].si.block[sk].n += pow(2,n);
-						n++;   //double에 10비트 할당
-						if(n==32){
-							n=0;
-							//new_single_block = print_super_block(*m);
-							sk++;
-						}
->>>>>>> 87238e29aed47ace8dd78a3e34dca24cc7d07b5d
 					}
 					
 					db=0; 
@@ -321,16 +292,8 @@ void call_mycpfrom(char command_option[6][15],struct myfs* m) {
 					if((new_direct_block>>i&1)==1)
 						m->datablock[new_single_block].si.block[n/32].n += pow(2,n%32);
 					n++;   //single에 10비트 할당
-<<<<<<< HEAD
-=======
-					if(n==32){
-						n=0;
-						//new_direct_block = print_super_block(m);
-						dk++;
-					}
->>>>>>> 87238e29aed47ace8dd78a3e34dca24cc7d07b5d
 				}
-			/*printf("%d %d %d %d %d %d %d\n",b,db,sb,m->inodelist[2].direct,m->inodelist[2].single_indirect,m->inodelist[2].double_indirect,db);
+			printf("%d %d %d %d %d %d %d\n",b,db,sb,m->inodelist[2].direct,m->inodelist[2].single_indirect,m->inodelist[2].double_indirect,db);
 					for(int l=0;l<32;l++){
 						for(int k=0;k<32;k++){
 							printf("%d",m->datablock[new_single_block].si.block[l].n>>k&1);
@@ -339,7 +302,7 @@ void call_mycpfrom(char command_option[6][15],struct myfs* m) {
 						}
 					}
 					printf("\n");
-					o=0; */
+					o=0; 
 				db++;//10비트 한번 넣을때마다 하나씩 올라감
 				b=0;
 			}
@@ -375,34 +338,19 @@ struct time_now now_time (void) {
 
 int print_super_inode(struct myfs* m) {
 	int i = 0;
-<<<<<<< HEAD
 	for (i = 1; ((m->super_inode[i/16].a >> (i%32)) & 0x1) != 0; i++)
 	{
 		if(i==512)return -1;
 	}
 	m->super_inode[i/16].a += pow(2, i%32);
-=======
-	for (i = 0; ((m->super_inode[i/32].a >> (i%32)) & 0x1) != 0; i++){
-		if(i == 512)
-			return -1;
-	}
-	m->super_inode[i/32].a += pow(2, i%32);     //i번째에 0이기 때문에 그 번째에 1을 더해준다.
-	printf("\n");
->>>>>>> 87238e29aed47ace8dd78a3e34dca24cc7d07b5d
 	return i;
 }
 
 int print_super_block(struct myfs* m) {
 	int i = 0;
-<<<<<<< HEAD
 	for (i = 0; ((m->super_block[i/32].a >> (i%32)) & 0x1) != 0; i++)
 	{
 		if(i==1023) return -1;
-=======
-	for (i = 0; ((m->super_block[i/32].a >> i%32) & 0x1) != 0; i++){
-		if (i == 1024)
-			return -1;
->>>>>>> 87238e29aed47ace8dd78a3e34dca24cc7d07b5d
 	}
 	m->super_block[i/32].a += pow(2,i%32);      //i번째에 0이라서 그 번째에 1을 더해준다.
 	printf("\n");
@@ -505,18 +453,12 @@ void block_linked(struct myfs *m,block_list *b,int inode){
 					printf("\n");
 					o=0; */
 			for(int j=0;j<10;j++){
-<<<<<<< HEAD
 				if((m->datablock[m->inodelist[inode].single_indirect].si.block[k].n>>n&1)==1){
 					l += pow(2,j);
 				}
 				n++; db++;
 				if(db==102)break;
 				if(n==32){n=0;k++;}
-=======
-				if((m->datablock[m->inodelist[inode].single_indirect].si.block[i].n>>n&1)==1)                    l += pow(2,j);
-				n++;
-				if(n==32){n=0;}
->>>>>>> 87238e29aed47ace8dd78a3e34dca24cc7d07b5d
 			}
 			push(b,l);
 			bcnt++;
