@@ -466,6 +466,21 @@ struct time_now now_time (void) {
 	return new;
 }
 
+struct time_now clear_time(){
+	struct time_now n={0};
+	return n;
+}
+
+void clear_inode(struct myfs* m,int inode){
+	m->inodelist[inode].d_f=0;
+	m->inodelist[inode].n = clear_time();
+	m->inodelist[inode].size = 0;
+	m->inodelist[inode].direct = 0;
+	m->inodelist[inode].single_indirect = 0;
+	m->inodelist[inode].double_indirect = 0;
+	remove_super_inode(inode,m);
+};
+
 int print_super_inode(struct myfs* m) {
 	int i = 0;
 	for (i = 1; ((m->super_inode[i/16].a >> (i%32)) & 0x1) != 0; i++)
@@ -571,21 +586,6 @@ short init_inode (struct myfs * m,int flag_d_f) { // 사이즈 없음 나중에�
 	return void_inode;
 }
 
-void clear_inode(struct myfs* m,int inode){
-	m->inodelist[inode].d_f=0;
-	m->inodelist[inode].n = clear_time();
-	m->inodelist[inode].size = 0;
-	m->inodelist[inode].direct = 0;
-	m->inodelist[inode].single_indirect = 0;
-	m->inodelist[inode].double_indirect = 0;
-	remove_super_inode(inode,m);
-};
-
-struct time_now clear_time(){
-	struct time_now n={0};
-	return n;
-}
-
 int find_file_inode (struct myfs * m, char name[4]) { // 중복검사에도 사용가능
 	//현재 디렉토리안에서만 같은 이름의 파일을 찾아서 그것의 아이노드
 	int now_dir_datablock = find_now_dir_datablock(m);
@@ -678,4 +678,3 @@ void command_clear(char command_option[][15]){
 			command_option[i][j]=0;
 	}
 }
-
