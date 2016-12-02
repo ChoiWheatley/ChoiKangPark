@@ -23,10 +23,10 @@ struct inode{
 	bool d_f;		//디렉토리-1/파일-0
 	struct time_now n;       //time구조체가 들어감
 	int size;		//파일 사이즈
-	int direct;		//블록 번호
-	int single_indirect; 	//single indirect의 정보는 inode list인지,
+	short direct;		//블록 번호
+	short single_indirect; 	//single indirect의 정보는 inode list인지,
 	//single indirect의 크기는 128인지, 아니면 정해져 있는지, 1바이트 넣어도 127바이트 낭비해도됨?
-	int double_indirect;
+	short double_indirect;
 };
 struct file{
 	char name[4];
@@ -52,12 +52,17 @@ struct super{
 struct dir{
 	struct file now;  //  .
 	struct file prev;  //  ..
-	struct file files[22]; // 128*8 / 41
+	struct file files[19]; // 128*8 / 41
+};
+
+struct dir_file_only{
+	struct file files[21];
 };
 
 
 union all{
 	struct dir d;
+	struct dir_file_only df;
 	struct direct dr;
 	struct single_indirect si;
 };
