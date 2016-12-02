@@ -31,7 +31,7 @@ void command_clear(char command_option[][15]);
 
 ///////////////////////////////////// call 함수 ///////////////////////////////////
 void call_mypwd(char command_option[6][15],struct myfs* m);
-void call_mystate(char command_option[6][15]);
+void call_mystate(char command_option[6][15], struct myfs m);
 
 void call_myls(char command_option[6][15]);
 void call_mycat(struct myfs *m,char command_option[6][15]);
@@ -142,7 +142,7 @@ int main(){
 			else if(strcmp(command_option[0],"myshowblock")==0)
 				call_myshowblock(command_option, m);
 			else if(strcmp(command_option[0],"mystate")==0)
-				call_mystate(command_option);
+				call_mystate(command_option, m);
 			else if(strcmp(command_option[0],"mytree")==0)
 				call_mytree(command_option);
 			//for test
@@ -168,8 +168,34 @@ void call_mypwd(char command_option[6][15],struct myfs* m) {
 			printf("%c",m->datablock[now[i]].d.now.name[j]);
 	}
 }
-void call_mystate(char command_option[6][15]) {
-	printf("mystate");
+void call_mystate(char command_option[6][15], struct myfs m) {
+	int free_inode = 0, free_block = 0;
+	int i = 0;
+
+	printf("free inode list : ");		//test
+	for (i = 0; i < 512; i++){
+		if ((i%32)== 0){					//test
+			printf("\n");
+		}
+			printf("%d", m.super_inode[i/16].a >> i%32 & 0x1);
+		if (((m.super_inode[i/16].a >> i%32) & 0x1) != 1){
+			free_inode++;
+		}
+	}
+
+	printf("\nfree data list : ");		//test
+	for (i = 0; i < 1024; i++){
+		if ((i%64) == 0){					//test
+			printf("\n");
+		}
+			printf("%d", m.super_block[i/32].a >> i%32 & 0x1);
+		if (((m.super_block[i/32].a >> i%32) & 0x1) != 1){
+			free_block++;
+		}
+	}
+	printf("\n");						//test
+
+	printf("free inode : %d\nfree data block : %d\n", free_inode, free_block);
 }
 void call_myls(char command_option[6][15]) {
 	printf("myls");
