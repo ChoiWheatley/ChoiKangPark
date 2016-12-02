@@ -25,6 +25,8 @@ void block_linked(struct myfs*,block_list*,int);
 void push(block_list*,int);
 //void clean_block_list(block_list*);
 
+void command_clear(char command_option[][15]);
+
 ///////////////////////////////////// call 함수 ///////////////////////////////////
 void call_mypwd(char command_option[6][15],struct myfs* m);
 void call_mystate(char command_option[6][15]);
@@ -42,7 +44,7 @@ void call_mytouch(char command_option[6][15], struct myfs* m);
 void call_myshowinode(char command_option[6][15],struct myfs m);
 void call_myshowblock(char command_option[6][15],struct myfs m);
 
-void call_myshowfile(char command_option[6][15]);
+void call_myshowfile(struct myfs* m,char command_option[6][15]);
 //민석
 void call_mycp(struct myfs* m,char command_option[6][15]);
 void call_mycpto(struct myfs *m,char command_option[6][15]);
@@ -112,7 +114,7 @@ int main(){
 			else if(strcmp(command_option[0],"mycat")==0)
 				call_mycat(&m,command_option);
 			else if(strcmp(command_option[0],"myshowfile")==0)
-				call_myshowfile(command_option);
+				call_myshowfile(&m,command_option);
 			else if(strcmp(command_option[0],"mypwd")==0)
 				call_mypwd(command_option,&m);
 			else if(strcmp(command_option[0],"mycd")==0)
@@ -151,6 +153,7 @@ int main(){
 			else if(strcmp(command_option[0], "myrmblock")==0)
 				printf("%dth block deleted.\n", remove_super_block(option_integer[1], &m));
 			printf("\n");
+			command_clear(command_option);
 		}
 	}
 	return 0;
@@ -170,7 +173,7 @@ void call_myls(char command_option[6][15]) {
 	printf("myls");
 }
 void call_mycat(struct myfs *m,char command_option[6][15]) {
-	if(command_option[2]==0){
+	if(command_option[2][0]==0){
 		char name[5];
 		int flag_d_f=0; // files
 		strncpy(name,command_option[1],4);
@@ -253,8 +256,35 @@ void call_myshowblock(char command_option[6][15],struct myfs m) {
 		printf("%c",m.datablock[n].dr.block[i]);
 	return ;
 }
-void call_myshowfile(char command_option[6][15]) {
-	printf("myshowfile");
+void call_myshowfile(struct myfs* m,char command_option[6][15]) {
+	block_list b={0};
+	char name[5];
+	strncpy(name,command_option[3],4);
+	int inode = find_file_inode(m,name);
+	if(inode==0){printf("error:파일이 존재하지 않습니다.\n");return;}
+	int s,l,start,fin;
+	sscanf(command_option[1],"%d",&s);
+	sscanf(command_option[2],"%d",&l);
+	
+	start = s/128;   fin = l/128;
+
+	block_linked(m,&b,inode);
+	
+	int n=0;
+	for(block* i = b.front;i!=NULL;i = i->next){
+		if(n==start){
+			for(int a=s;a<128;a++)
+				printf("%c",m->datablock[i->num].dr.block[a]);
+		}
+		else if(n==fin){
+			for(int a=0;a<fin;a++)
+				printf("%c",m->datablock[i->num].dr.block[a]);
+		}
+		else{
+			for(int a=0;a<128;a++)
+				printf("%c",m->datablock[i->num].dr.block[a]);
+		}
+	}
 }
 //민석
 void call_mycp(struct myfs* m,char command_option[6][15]) {
@@ -332,6 +362,11 @@ void call_mycpto(struct myfs *m,char command_option[6][15]) {
 }
 
 void call_mycpfrom(char command_option[6][15],struct myfs* m) {
+	char c_name[5]={0};
+	strncpy(c_name,command_option[1],4);
+	FILE* fc = fopen(c_name,"r");
+	if(fc==NULL){printf("error:가져오려는 파일이 존재하지 않습니다.\n"); return;}
+	else{
 	char name[5];
 	int flag_d_f=0; //files
 	strncpy(name,command_option[2],4);
@@ -340,11 +375,6 @@ void call_mycpfrom(char command_option[6][15],struct myfs* m) {
 	int c,new_double_block,new_single_block;
 	int b=0,db=0,size=0,new_block,sb=0,n=0;
 	int o=0,v=0;
-	char new_name[5]={0};
-	strncpy(new_name,command_option[2],4);
-	FILE* fc = fopen(new_name,"r");
-	if(fc==NULL) return;
-	else{
 		while((c=getc(fc))!=EOF){
 			m->datablock[new_direct_block].dr.block[b]=c;
 			b++; //다이렉트 블록의 크기 체크
@@ -578,3 +608,11 @@ void push(block_list* b,int n){
 	b->back->next = tmp;
 	b->back = b->back->next;
 }
+
+void command_clear(char command_option[][15]){
+	for(int i=0;i<6;i++){
+		for(int j=0;j<16;j++)
+			command_option[i][j]=0;
+	}
+}
+
