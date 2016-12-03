@@ -162,6 +162,8 @@ int main(){
 				print_many_inode(option_integer[1], &m);
 			else if (strcmp(command_option[0], "mymanyblock")==0)
 				print_many_block(option_integer[1], &m);
+			else if (strcmp(command_option[0], "myfindinode") == 0)
+				printf("%d번째 아이노드에 할당되어있다.\n",find_file_inode(&m, command_option[1]));
 			printf("\n");
 			command_clear(command_option);
 		}
@@ -186,7 +188,7 @@ void call_mystate(char command_option[6][15], struct myfs m) {
 		if ((i%32)== 0){							//test
 			printf("\n");
 		}
-			printf("%d", m.super_inode[i/32].a >> (i%32) & 0x1);
+		printf("%d", m.super_inode[i/32].a >> (i%32) & 0x1);
 		if (((m.super_inode[i/32].a >> (i%32)) & 0x1) != 1){
 			free_inode++;
 		}
@@ -197,7 +199,7 @@ void call_mystate(char command_option[6][15], struct myfs m) {
 		if ((i%32) == 0){							//test
 			printf("\n");
 		}
-			printf("%d", m.super_block[i/32].a >> (i%32) & 0x1);
+		printf("%d", m.super_block[i/32].a >> (i%32) & 0x1);
 		if (((m.super_block[i/32].a >> (i%32)) & 0x1) != 1){
 			free_block++;
 		}
@@ -207,7 +209,6 @@ void call_mystate(char command_option[6][15], struct myfs m) {
 	printf("free inode : %d\nfree data block : %d\n", free_inode, free_block);
 }
 void call_myls(char command_option[6][15]) {
-	printf("myls");
 }
 void call_mycat(struct myfs *m,char command_option[6][15]) {
 	if(command_option[2][0]==0){
@@ -232,10 +233,21 @@ void call_mycd(char command_option[6][15]) {
 }
 //승현
 void call_mymkdir(char command_option[6][15],struct myfs * m) {
-	printf("mymkdir");
-	//	char dir_name[5]={0};
-	//	strncpy(dir_name,command_option[1],4);
-	//	allocation_file_inode(m,co
+	char dir_name[5]={0};
+	int void_inode;
+	int void_block;
+
+	strncpy(dir_name,command_option[1],4);
+	void_inode = allocation_file_inode(m, dir_name, 1);		//dir_name 이름을 가진 파일을 아이노드와 데이터블록에 할당해주는 함수
+	void_block = m->inodelist[void_inode].direct = print_super_block(m);
+
+	printf("%d번째 아이노드와 %d번째 블럭에 할당함.\n", void_inode, void_block);
+
+	m->datablock[now[top-1]].d.now.name[0] = '.';
+	m->datablock[now[top-1]].d.now.inode = now[top-1];
+	m->datablock[now[top-1]].d.prev.name[0] = '.';
+	m->datablock[now[top-1]].d.prev.name[1] = '.';
+	m->datablock[now[top-1]].d.prev.inode = now[top-2];
 }
 void call_myrmdir(struct myfs* m,char command_option[6][15]) {
 	char name[5];
@@ -262,6 +274,22 @@ void call_myrm(char command_option[6][15]) {
 }
 //상은
 void call_mytouch(char command_option[6][15], struct myfs* m) {
+	//allocation_file_inode 함수 사용해서 다시만듬.
+	char file_name[4];
+	int i = 0;
+	int void_block;
+	int void_inode;
+	strncpy (file_name, command_option[1], 4);
+	if (find_file_inode(m, file_name) != 0){		//파일이 존재하면...
+		m->inodelist[find_file_inode(m, file_name)].n = now_time();
+	}
+	else{
+		void_inode = allocation_file_inode(m, file_name, 0);		//dir_name 이름을 가진 파일을 아이노드와 데이터블록에 할당해주는 함수
+		void_block = m->inodelist[void_inode].direct = print_super_block(m);
+		printf("%d번째 아이노드와 %d번째 블럭에 새로운 파일을 할당했습니다.\n",void_inode, void_block);
+	}
+
+/*
 	//현재 디렉토리에서 같은이름의 파일 찾기
 	int i = 0;
 	int flag = 0;		//0 = 없음. 1 = 있음
@@ -280,6 +308,8 @@ void call_mytouch(char command_option[6][15], struct myfs* m) {
 		}
 		new_file.inode = print_super_inode(m);
 	}
+	i
+*/
 }
 void call_myshowinode(char command_option[6][15], struct myfs m) {
 	int inode_number;
@@ -576,39 +606,42 @@ void print_many_block (unsigned int block_number, struct myfs* m){
 int allocation_file_inode (struct myfs * m,char name[4],int flag_d_f) { // file이름 받아 indoe할당받고 저장, file이름도
 	int now_dir_datablock = find_now_dir_datablock(m);
 	int check = find_file_inode(m,name); // check는 이미있는 파일의 아이노드값
-	if(!check)
+	if(!check)		//겹치는 게 없다면
 	{
 		for(int i=0 ; i<19 ; i++)
 		{
-			if(m->datablock[now_dir_datablock].d.files[i].name[0]=='\0')
+			if(m->datablock[now_dir_datablock].d.files[i].name[0]=='\0')		//비어있는 파일번호
 			{
 				strcpy(m->datablock[now_dir_datablock].d.files[i].name,name); // 이름 복사
 				short inode = init_inode(m,flag_d_f);
 				//short inode = print_super_inode(m);
 				m->datablock[now_dir_datablock].d.files[i].inode = inode;  // 아이노드 입력
-				m->inodelist[now[top-1]].size += 6; //현재 파일 사이즈 증가
+				//너무 끔찍하다. 상위폴더의 사이즈도 증가시켜야 한다. 
+				for (int j = top-1; j >= 0; j--){
+					m->inodelist[now[j]].size += 6;
+				}
+				//m->inodelist[now[top-1]].size += 6; //현재 파일 사이즈 증가
 				return inode;
 			}
 		}
 		if(!(m->inodelist[now[top-1]].single_indirect))
 			m->inodelist[now[top-1]].single_indirect = print_super_block(m);
 		int single_num = m->inodelist[now[top-1]].single_indirect;
-		int single_files = (m->inodelist[now[top-1]].size - 126)/6; //single_indirect에 있는 파일 수
+		int single_files = (m->inodelist[now[top-1]].size - 114)/6; //single_indirect에 있는 파일 수
 		int at_single = single_files / 21;
 		int at_direct = single_files % 21;
 		int direct_num=0;
 		if(at_direct == 0){   //새로 다이렉트 블록을 할당해야 하는 경우
 			direct_num = print_super_block(m);
 			for(int i=at_single*10;i<at_single*10+10;i++){
-				if(direct_num>>(i%10))
-					m->datablock[single_num].si.block[i/32].n += pow(2,i);
+				if(direct_num>>(i%10)&1==1)
+					m->datablock[single_num].si.block[i/32].n += pow(2,(i%32));
 			}
 		}
 
 		else{	//가장 끝에 있는 다이렉트 블록을 읽어와야 할 경우
-
 			for(int i=at_single*10;i<at_single*10+10;i++){
-				if(m->datablock[single_num].si.block[i/32].n>>(i%32)==1)
+				if(m->datablock[single_num].si.block[i/32].n>>(i%32)&1==1)
 					direct_num += pow(2,i%10);
 			}
 		}
@@ -617,7 +650,9 @@ int allocation_file_inode (struct myfs * m,char name[4],int flag_d_f) { // file�
 		short inode = init_inode(m,flag_d_f);
 		//short inode = print_super_inode(m);
 		m->datablock[direct_num].d.files[at_direct].inode = inode;  // 아이노드 입력
-		m->inodelist[now[top-1]].size += 6; //현재 파일 사이즈 증가
+		for (int j = top-1; j >= 0; j--){
+			m->inodelist[now[j]].size += 6;			//single 파일사이즈 올림
+		}
 		return inode;
 	}
 	//이 이상이면 싱글 더블 추가해야함
@@ -644,8 +679,7 @@ void rm_file_inode (struct myfs * m,char name[4],int flag_d_f) { // file이름 �
 			}
 		}
 	}
-	else
-	{
+	else{
 		printf("그런 파일이 없음\n");
 		return ;
 	}
@@ -672,7 +706,6 @@ int find_file_inode (struct myfs * m, char name[4]) { // 중복검사에도 사�
 		if(strcmp(m->datablock[now_dir_datablock].d.files[i].name,name)==0)
 			return m->datablock[now_dir_datablock].d.files[i].inode; // 그떄의 inode 출력
 	}
-	printf("일치하는 파일이 없음\n");
 	return 0; // false 리턴
 }
 
