@@ -57,7 +57,7 @@ void call_myshowfile(struct myfs* m,char command_option[6][15]);
 void call_mycp(struct myfs* m,char command_option[6][15]);
 void call_mycpto(struct myfs *m,char command_option[6][15]);
 void call_mycpfrom(char command_option[6][15],struct myfs* m);
-void call_mymv(char command_option[6][15]);
+void call_mymv(char command_option[6][15], struct myfs* m);
 ///////////////////////////////////// call 함수 ///////////////////////////////////
 int main(){
 	FILE* fp;
@@ -141,7 +141,7 @@ int main(){
 			else if(strcmp(command_option[0],"myrm")==0)
 				call_myrm(&m,command_option);
 			else if(strcmp(command_option[0],"mymv")==0)
-				call_mymv(command_option);
+				call_mymv(command_option, &m);
 			else if(strcmp(command_option[0],"mytouch")==0)
 				call_mytouch(command_option, &m);
 			else if(strcmp(command_option[0],"myshowinode")==0)
@@ -301,7 +301,14 @@ void call_mymkdir(char command_option[6][15],struct myfs * m) {
 	int void_inode;
 	int void_block;
 
+
 	strncpy(dir_name,command_option[1],4);
+
+	if (find_file_inode(m, dir_name)){
+		printf("이미 같은 이름의 파일이 있어요!\n");
+		return;
+	}
+
 	void_inode = allocation_file_inode(m, dir_name, 1);		//dir_name 이름을 가진 파일을 아이노드와 데이터블록에 할당해주는 함수
 	void_block = m->inodelist[void_inode].direct = print_super_block(m);
 
@@ -382,7 +389,7 @@ void call_myrm(struct myfs*m,char command_option[6][15]){
 		m->inodelist[now[j]].size -= 6;
 	} //현재,이전 파일들 사이즈 줄이기
 }
-//상은
+
 void call_mytouch(char command_option[6][15], struct myfs* m) {
 	//allocation_file_inode 함수 사용해서 다시만듬.
 	char file_name[4];
@@ -620,7 +627,27 @@ void call_mycpfrom(char command_option[6][15],struct myfs* m) {
 }
 
 
-void call_mymv(char command_option[6][15]) {
+void call_mymv(char command_option[6][15], struct myfs* m ) {
+	char first_operand[4] = {0};
+	char second_operand[4] = {0};
+	int now_dir_datablock = find_now_dir_datablock(m);
+	int i;
+
+	strncpy (first_operand, command_option[1], 4);
+	strncpy (second_operand, command_option[2], 4);
+
+	if (!find_file_inode(m, first_operand)){
+		printf("바꾸려고 하는 파일이 존재하지 않아요!!\n");
+		return;
+	}
+	if (!find_file_inode(m, second_operand)){		//현재 디렉토리에 같은 이름의 파일이 없을 때
+		for (i = 0; i < 19; i++){
+			if (strcmp(m->datablock[now_dir_datablock].d.files[i].name, first_operand) == 0){
+				strcpy(m->datablock[now_dir_datablock].d.files[i].name, "");
+				strcpy(m->datablock[now_dir_datablock].d.files[i].name, second_operand);
+			}
+		}
+	}
 }
 ///////////////////////////////////// call 함수 ///////////////////////////////////
 struct time_now now_time (void) {
@@ -892,7 +919,7 @@ int find_file_inode (struct myfs * m, char name[4]) { // 중복검사에도 사�
 			}
 		}
 	}
-	printf("일치하는 파일이 없음\n");
+//	printf("일치하는 파일이 없음\n");
 	return 0; // false 리턴
 }
 
@@ -1040,4 +1067,3 @@ void command_clear(char command_option[][15]){
 int cmp(const void* a,const void* b){
 	return (strncmp(((struct file*)a)->name,((struct file*)b)->name,4));
 }
-
