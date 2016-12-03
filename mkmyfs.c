@@ -25,6 +25,8 @@ int main(){
 		m.inodelist[1].d_f=1;//파일인지 디렉토리인지
 		m.inodelist[1].n = new;
 		m.datablock[0].d.now.name[0]='/';
+		m.datablock[0].d.prev.name[0]='/';
+		m.datablock[0].d.prev.inode += 1;
 		m.datablock[0].d.now.inode += 1;
 		fwrite(&m,sizeof(m),1,fp);
 		fclose(fp);
