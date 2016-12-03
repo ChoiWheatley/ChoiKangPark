@@ -17,8 +17,11 @@ int print_super_inode (struct myfs * m);
 int print_super_block (struct myfs * m);
 int remove_super_inode (unsigned int inode_number, struct myfs* m);     //rm, rmdir명령어
 int remove_super_block (unsigned int block_number, struct myfs* m);     //정수형 숫자를 받아들여 그 번째의 인덱스의 연결을 끊어버린다.
+void print_many_inode (unsigned int inode_number, struct myfs* m);		//계속 myprint뭐시기 입력하기 귀찮다. 인자로 아예 몇개를 받아버릴지.
+void print_many_block (unsigned int block_number, struct myfs* m);
 
 int allocation_file_inode (struct myfs * m,char name[4],int flag_d_f); // file이름 받아 indoe할당받고 저장, file이름도
+void rm_file_inode (struct myfs * m,char name[4],int flag_d_f);
 short init_inode (struct myfs * m,int flag_d_f); // 사이즈 없음 나중에해야됌
 int find_file_inode (struct myfs * m, char name[4]);
 int find_now_dir_datablock(struct myfs * m);
@@ -31,7 +34,7 @@ void command_clear(char command_option[][15]);
 
 ///////////////////////////////////// call 함수 ///////////////////////////////////
 void call_mypwd(char command_option[6][15],struct myfs* m);
-void call_mystate(char command_option[6][15]);
+void call_mystate(char command_option[6][15], struct myfs m);
 
 void call_myls(char command_option[6][15]);
 void call_mycat(struct myfs *m,char command_option[6][15]);
@@ -148,18 +151,22 @@ int main(){
 			else if(strcmp(command_option[0],"myshowblock")==0)
 				call_myshowblock(command_option, m);
 			else if(strcmp(command_option[0],"mystate")==0)
-				call_mystate(command_option);
+				call_mystate(command_option, m);
 			else if(strcmp(command_option[0],"mytree")==0)
 				call_mytree(command_option);
 			//for test
 			else if(strcmp(command_option[0], "myprintinode")==0)
-				printf("%d\n", print_super_inode(&m));
+				printf("%dth inode added.\n", print_super_inode(&m));
 			else if(strcmp(command_option[0], "myprintblock")==0)
-				printf("%d\n", print_super_block(&m));
+				printf("%dth block added.\n", print_super_block(&m));
 			else if(strcmp(command_option[0], "myrminode")==0)
 				printf("%dth inode deleted.\n", remove_super_inode(option_integer[1], &m));
 			else if(strcmp(command_option[0], "myrmblock")==0)
 				printf("%dth block deleted.\n", remove_super_block(option_integer[1], &m));
+			else if (strcmp(command_option[0], "mymanyinode")==0)
+				print_many_inode(option_integer[1], &m);
+			else if (strcmp(command_option[0], "mymanyblock")==0)
+				print_many_block(option_integer[1], &m);
 			printf("\n");
 			command_clear(command_option);
 		}
@@ -174,8 +181,35 @@ void call_mypwd(char command_option[6][15],struct myfs* m) {
 			printf("%c",m->datablock[now[i]].d.now.name[j]);
 	}
 }
-void call_mystate(char command_option[6][15]) {
-	printf("mystate");
+void call_mystate(char command_option[6][15], struct myfs m) {
+	int free_inode = 0, free_block = 0;
+	int i = 0;
+	int j = 0;
+
+	printf("free inode list : ");					//test
+	for (i = 0; i < 512; i++){
+		if ((i%32)== 0){							//test
+			printf("\n");
+		}
+			printf("%d", m.super_inode[i/32].a >> (i%32) & 0x1);
+		if (((m.super_inode[i/32].a >> (i%32)) & 0x1) != 1){
+			free_inode++;
+		}
+	}
+
+	printf("\nfree data block list : ");			//test
+	for (i = 0; i < 1024; i++){
+		if ((i%32) == 0){							//test
+			printf("\n");
+		}
+			printf("%d", m.super_block[i/32].a >> (i%32) & 0x1);
+		if (((m.super_block[i/32].a >> (i%32)) & 0x1) != 1){
+			free_block++;
+		}
+	}
+	printf("\n");									//test
+
+	printf("free inode : %d\nfree data block : %d\n", free_inode, free_block);
 }
 void call_myls(char command_option[6][15]) {
 	printf("myls");
@@ -472,13 +506,28 @@ struct time_now now_time (void) {
 	return new;
 }
 
+struct time_now clear_time(){
+	struct time_now n={0};
+	return n;
+}
+
+void clear_inode(struct myfs* m,int inode){
+	m->inodelist[inode].d_f=0;
+	m->inodelist[inode].n = clear_time();
+	m->inodelist[inode].size = 0;
+	m->inodelist[inode].direct = 0;
+	m->inodelist[inode].single_indirect = 0;
+	m->inodelist[inode].double_indirect = 0;
+	remove_super_inode(inode,m);
+}
+
 int print_super_inode(struct myfs* m) {
 	int i = 0;
-	for (i = 1; ((m->super_inode[i/16].a >> (i%32)) & 0x1) != 0; i++)
+	for (i = 0; ((m->super_inode[i/32].a >> (i%32)) & 0x1) != 0; i++)
 	{
 		if(i==512)return -1;
 	}
-	m->super_inode[i/16].a += pow(2, i%32);
+	m->super_inode[i/32].a += pow(2, i%32);
 	return i;
 }
 
@@ -510,13 +559,31 @@ int remove_super_block (unsigned int block_number, struct myfs* m){
 	}
 }
 
+void print_many_inode (unsigned int inode_number, struct myfs* m){
+	int i = 0;
+	for (i = 0; i < inode_number; i++){
+		print_super_inode(m);
+	}
+}
+
+void print_many_block (unsigned int block_number, struct myfs* m){
+	int i = 0;
+	for (i = 0; i < block_number; i++){
+		print_super_block(m);
+	}
+}
+
+
+
+
+
 // inode를 입력받는게 현재인지? 파일들인지 // 디렉인지 파일인지에 따라서
 int allocation_file_inode (struct myfs * m,char name[4],int flag_d_f) { // file이름 받아 indoe할당받고 저장, file이름도
 	int now_dir_datablock = find_now_dir_datablock(m);
 	int check = find_file_inode(m,name); // check는 이미있는 파일의 아이노드값
 	if(!check)
 	{
-		for(int i=0 ; i<22 ; i++)
+		for(int i=0 ; i<19 ; i++)
 		{
 			if(m->datablock[now_dir_datablock].d.files[i].name[0]=='\0')
 			{
@@ -565,6 +632,31 @@ int allocation_file_inode (struct myfs * m,char name[4],int flag_d_f) { // file�
 	}
 	return 0;
 }
+
+void rm_file_inode (struct myfs * m,char name[4],int flag_d_f) { // file이름 받아 indoe할당받고 저장, file이름도
+	int now_dir_datablock = find_now_dir_datablock(m);
+	int check = find_file_inode(m,name); // check는 이미있는 파일의 아이노드값
+	if(check)
+	{
+		for(int i=0 ; i<19 ; i++)
+		{
+			if(m->datablock[now_dir_datablock].d.files[i].inode == check)
+			{
+				for(int j=0 ; j<4 ; j++)
+					m->datablock[now_dir_datablock].d.files[i].name[j]='\0'; // 이름 삭제
+				m->datablock[now_dir_datablock].d.files[i].inode = 0;  // 아이노드 입력
+				return ;
+			}
+		}
+	}
+	else
+	{
+		printf("그런 파일이 없음\n");
+		return ;
+	}
+}
+
+
 //빈 아이노드 숫자를 받아서 아이노드 리스트를 채우는것(단, 초기라서 direct뿐임)
 short init_inode (struct myfs * m,int flag_d_f) { // 사이즈 없음 나중에해야됌
 	//싱글 더블 추가여부
@@ -575,21 +667,6 @@ short init_inode (struct myfs * m,int flag_d_f) { // 사이즈 없음 나중에�
 	//	m->inodelist[void_inode].direct = void_block; // 빈 블록을 direct블록에 할당 
 	// 사이즈랑 싱글 , 더블을 알 수 없음;
 	return void_inode;
-}
-
-void clear_inode(struct myfs* m,int inode){
-	m->inodelist[inode].d_f=0;
-	m->inodelist[inode].n = clear_time();
-	m->inodelist[inode].size = 0;
-	m->inodelist[inode].direct = 0;
-	m->inodelist[inode].single_indirect = 0;
-	m->inodelist[inode].double_indirect = 0;
-	remove_super_inode(inode,m);
-};
-
-struct time_now clear_time(){
-	struct time_now n={0};
-	return n;
 }
 
 int find_file_inode (struct myfs * m, char name[4]) { // 중복검사에도 사용가능
@@ -684,4 +761,3 @@ void command_clear(char command_option[][15]){
 			command_option[i][j]=0;
 	}
 }
-
