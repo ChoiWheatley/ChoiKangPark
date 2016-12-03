@@ -552,7 +552,7 @@ int print_super_inode(struct myfs* m) {
 
 int print_super_block(struct myfs* m) {
 	int i = 0;
-	for (i = 0; ((m->super_block[i/32].a >> (i%32)) & 0x1) != 0; i++)
+	for (i = 1; ((m->super_block[i/32].a >> (i%32)) & 0x1) != 0; i++)
 	{
 		if(i==1023) return -1;
 	}
