@@ -42,7 +42,7 @@ void call_mystate(char command_option[6][15], struct myfs m);
 void call_myls(struct myfs* m,char command_option[6][15]);
 void call_mycat(struct myfs *m,char command_option[6][15]);
 void call_mytree(char command_option[6][15]);
-void call_mycd(char command_option[6][15]);
+void call_mycd(char command_option[6][15], struct myfs *m);
 void call_mymkdir(char command_option[6][15],struct myfs * m);
 void call_myrmdir(struct myfs* m,char command_option[6][15]);
 void call_myrm(struct myfs* m,char command_option[6][15]);
@@ -79,9 +79,13 @@ int main(){
 		char command_option[6][15] = {0};
 
 		printf("[");
+		if (now[top-1] == 1){
+			printf("/");
+		}
 		for(int i=0;i<top;i++){
-			for(int j=0;j<4;j++)
+			for(int j=1;j<4;j++){
 				printf("%c",m.datablock[m.inodelist[now[i]].direct].d.now.name[j]);
+			}
 			if (top != 1)
 				printf("/");
 		}
@@ -124,7 +128,7 @@ int main(){
 			else if(strcmp(command_option[0],"mypwd")==0)
 				call_mypwd(command_option,&m);
 			else if(strcmp(command_option[0],"mycd")==0)
-				call_mycd(command_option);
+				call_mycd(command_option, &m);
 			else if(strcmp(command_option[0],"mycp")==0)
 				call_mycp(&m,command_option);
 			else if(strcmp(command_option[0],"mycpto")==0)
@@ -175,10 +179,14 @@ int main(){
 
 ///////////////////////////////////// call 함수 ///////////////////////////////////
 void call_mypwd(char command_option[6][15],struct myfs* m) {
-	for(int i=0;i<top;i++){
-		for(int j=0;j<4;j++)
-			printf("%c",m->datablock[m->inodelist[i].direct].d.now.name[j]);
+	//real reeeeeeee
+	for (int i = 0; i < top; i++){
+		for (int j = 1; j < 4; j++){
+			printf("%c", m->datablock[m->inodelist[now[i]].direct].d.now.name[j]);
+		}
+		printf("/");
 	}
+	printf("\n");
 }
 
 void call_mystate(char command_option[6][15], struct myfs m) {
@@ -232,11 +240,17 @@ void call_myls(struct myfs* m,char command_option[6][15]) {
 	block_list b={0};
 	int inode = now[top-1];
 	struct file e[510]={0};
+	int cnt=0;
 	dir_block_linked(m,&b,now[top-1]);
 	dir_block_array(m,&b,e);
-	qsort(e,(m->inodelist[inode].size/6)+2,sizeof(struct file),cmp);
+	for(int i=0;i<510;i++){
+		if(e[i].name[0]!=0)
+			break;
+		cnt++;
+	}
+	qsort(e,cnt,sizeof(struct file),cmp);
 	if(option==0){
-		for(int i=0;e[i].inode!=0;i++){
+		for(int i=0;e[i].name[0]!=0;i++){
 			for(int j=0;j<4;j++)
 				printf("%c",e[i].name[j]);	
 			printf("\n");
@@ -244,19 +258,19 @@ void call_myls(struct myfs* m,char command_option[6][15]) {
 	}
 
 	else if(option==1){
-		for(int i=0;e[i].inode!=0;i++){
+		for(int i=0;e[i].name[0]!=0;i++){
 			if(m->inodelist[e[i].inode].d_f==0) printf("-  ");
 			else printf("d  ");
 			printf("%4d  ",m->inodelist[e[i].inode].size);
 			printf("%2d/%2d/%2d %2d:%2d:%2d  ", m->inodelist[e[i].inode].n.year+1900, m->inodelist[e[i].inode].n.mon, m->inodelist[e[i].inode].n.day, m->inodelist[e[i].inode].n.hour, m->inodelist[e[i].inode].n.min, m->inodelist[e[i].inode].n.sec);
 			for(int j=0;j<4;j++)
-				printf("%c",e[i].name[j]);	
+				printf("%c",e[i].name[j]);
 			printf("\n");
 		}
 	}
 
 	else if(option==2){
-		for(int i=0;e[i].inode!=0;i++){
+		for(int i=0;e[i].name[0]!=0;i++){
 			printf("%3d  ",e[i].inode);
 			for(int j=0;j<4;j++)
 				printf("%c",e[i].name[j]);	
@@ -282,14 +296,37 @@ void call_mycat(struct myfs *m,char command_option[6][15]) {
 void call_mytree(char command_option[6][15]) {
 	printf("mytree");
 }
-void call_mycd(char command_option[6][15]) {
-	printf("mycd");
+void call_mycd(char command_option[6][15], struct myfs* m) {
+	char dir_name[4] = {0};
+	strncpy(dir_name, command_option[1], 4);
+	short dir_block = 0;
+	short dir_inode = find_file_inode(m, dir_name);
+	printf("이 디렉토리 아이노드는 %d 입니다\n", dir_inode);
+
+	if (strcmp(dir_name, ".") == 0){
+		;
+	}
+	else if (strcmp(dir_name, "..") == 0){
+		if (top > 1){
+			short upper_inode = find_file_inode(m, "..");
+			printf("%d!!\n", upper_inode);
+			now[top-1] = upper_inode;
+			top--;
+		}
+	}
+	else if (!dir_inode || !m->inodelist[find_file_inode(m, dir_name)].d_f){		//없으면.
+		printf("그런 디렉토리 없는데요?");
+		return;
+	}
+	else{
+		now[top] = dir_inode;
+		top++;
+	}
 }
 void call_mymkdir(char command_option[6][15],struct myfs * m) {
 	char dir_name[5]={0};
 	int void_inode;
 	int void_block;
-
 
 	strncpy(dir_name,command_option[1],4);
 
@@ -301,13 +338,14 @@ void call_mymkdir(char command_option[6][15],struct myfs * m) {
 	void_inode = allocation_file_inode(m, dir_name, 1);		//dir_name 이름을 가진 파일을 아이노드와 데이터블록에 할당해주는 함수
 	void_block = m->inodelist[void_inode].direct = print_super_block(m);
 
-	printf("%d번째 아이노드와 %d번째 블럭에 할당함.\n", void_inode, void_block);
+	printf("%s는 %d번째 아이노드와 %d번째 블럭에 할당함.\n", dir_name, void_inode, void_block);
 
-	m->datablock[now[top-1]].d.now.name[0] = '.';
-	m->datablock[now[top-1]].d.now.inode = now[top-1];
-	m->datablock[now[top-1]].d.prev.name[0] = '.';
-	m->datablock[now[top-1]].d.prev.name[1] = '.';
-	m->datablock[now[top-1]].d.prev.inode = now[top-2];
+	strncpy(m->datablock[void_block].d.now.name, dir_name, 4);
+
+	m->datablock[void_block].d.prev.name[0] = '.';
+	m->datablock[void_block].d.prev.name[1] = '.';
+	m->datablock[void_block].d.now.inode = void_inode;
+	m->datablock[void_block].d.prev.inode = now[top-1];
 }
 void call_myrmdir(struct myfs* m,char command_option[6][15]) {
 	char name[5];
