@@ -26,24 +26,26 @@ short init_inode (struct myfs * m,int flag_d_f); // 사이즈 없음 나중에�
 int find_file_inode (struct myfs * m, char name[4]);
 int find_now_dir_datablock(struct myfs * m);
 
+void dir_block_array(struct myfs*,block_list*,struct file e[]);
 void dir_block_linked(struct myfs*,block_list*,int);
 void block_linked(struct myfs*,block_list*,int);
 void push(block_list*,int);
 //void clean_block_list(block_list*);
 
 void command_clear(char command_option[][15]);
+int cmp(const void* a,const void* b);
 
 ///////////////////////////////////// call 함수 ///////////////////////////////////
 void call_mypwd(char command_option[6][15],struct myfs* m);
 void call_mystate(char command_option[6][15], struct myfs m);
 
-void call_myls(struct myfs m,char command_option[6][15]);
+void call_myls(struct myfs* m,char command_option[6][15]);
 void call_mycat(struct myfs *m,char command_option[6][15]);
 void call_mytree(char command_option[6][15]);
 void call_mycd(char command_option[6][15]);
 void call_mymkdir(char command_option[6][15],struct myfs * m);
 void call_myrmdir(struct myfs* m,char command_option[6][15]);
-void call_myrm(char command_option[6][15]);
+void call_myrm(struct myfs* m,char command_option[6][15]);
 void call_mytouch(char command_option[6][15], struct myfs* m);
 void call_myshowinode(char command_option[6][15],struct myfs m);
 void call_myshowblock(char command_option[6][15],struct myfs m);
@@ -114,7 +116,7 @@ int main(){
 			}
 
 			if(strcmp(command_option[0],"myls")==0)
-				call_myls(m,command_option);
+				call_myls(&m,command_option);
 			else if(strcmp(command_option[0],"mycat")==0)
 				call_mycat(&m,command_option);
 			else if(strcmp(command_option[0],"myshowfile")==0)
@@ -134,7 +136,7 @@ int main(){
 			else if(strcmp(command_option[0],"myrmdir")==0)
 				call_myrmdir(&m,command_option);
 			else if(strcmp(command_option[0],"myrm")==0)
-				call_myrm(command_option);
+				call_myrm(&m,command_option);
 			else if(strcmp(command_option[0],"mymv")==0)
 				call_mymv(command_option, &m);
 			else if(strcmp(command_option[0],"mytouch")==0)
@@ -180,11 +182,11 @@ void call_mypwd(char command_option[6][15],struct myfs* m) {
 	}
 
 	//last
-/*	for(int i=0;i<top;i++){
+	/*	for(int i=0;i<top;i++){
 		for(int j=0;j<4;j++)
-			printf("%c",m->datablock[now[i]].d.now.name[j]);
-	}
-*/
+		printf("%c",m->datablock[m->inodelist[i].direct].d.now.name[j]);
+		}
+		*/
 }
 void call_mystate(char command_option[6][15], struct myfs m) {
 	int free_inode = 0, free_block = 0;
@@ -216,7 +218,7 @@ void call_mystate(char command_option[6][15], struct myfs m) {
 
 	printf("free inode : %d\nfree data block : %d\n", free_inode, free_block);
 }
-void call_myls(struct myfs m,char command_option[6][15]) {
+void call_myls(struct myfs* m,char command_option[6][15]) {
 	char name_or_path[15]={0};
 	int option=0;
 	if(command_option[1][0]=='-'){
@@ -236,9 +238,37 @@ void call_myls(struct myfs m,char command_option[6][15]) {
 	//아래거는 if(==0)일 경우
 	block_list b={0};
 	int inode = now[top-1];
-	struct file element[510]={0};
+	struct file e[510]={0};
+	dir_block_linked(m,&b,now[top-1]);
+	dir_block_array(m,&b,e);
+	qsort(e,(m->inodelist[inode].size/6)+2,sizeof(struct file),cmp);
 	if(option==0){
-		dir_block_linked(&m,&b,now[top-1]);
+		for(int i=0;e[i].inode!=0;i++){
+			for(int j=0;j<4;j++)
+				printf("%c",e[i].name[j]);	
+			printf("\n");
+		}	
+	}
+
+	else if(option==1){
+		for(int i=0;e[i].inode!=0;i++){
+			if(m->inodelist[e[i].inode].d_f==0) printf("-  ");
+			else printf("d  ");
+			printf("%4d  ",m->inodelist[e[i].inode].size);
+			printf("%2d/%2d/%2d %2d:%2d:%2d  ", m->inodelist[e[i].inode].n.year+1900, m->inodelist[e[i].inode].n.mon, m->inodelist[e[i].inode].n.day, m->inodelist[e[i].inode].n.hour, m->inodelist[e[i].inode].n.min, m->inodelist[e[i].inode].n.sec);
+			for(int j=0;j<4;j++)
+				printf("%c",e[i].name[j]);	
+			printf("\n");
+		}
+	}
+
+	else if(option==2){
+		for(int i=0;e[i].inode!=0;i++){
+			printf("%3d  ",e[i].inode);
+			for(int j=0;j<4;j++)
+				printf("%c",e[i].name[j]);	
+			printf("\n");
+		}
 	}
 }
 void call_mycat(struct myfs *m,char command_option[6][15]) {
@@ -306,7 +336,54 @@ void call_myrmdir(struct myfs* m,char command_option[6][15]) {
 	clear_inode(m,inode);
 }
 
-void call_myrm(char command_option[6][15]) {
+void call_myrm(struct myfs*m,char command_option[6][15]){
+
+	char name[5];
+	strncpy(name,command_option[1],4);
+	int inode = find_file_inode(m,name);
+
+	rm_file_inode(m,name,0);
+
+	block_list b;
+	block_linked(m,&b,inode);
+
+	for(block* i = b.front;i!=NULL;i = i->next){
+		remove_super_block(i->num,m);
+		for(int j=0;j<128;j++){
+			m->datablock[i->num].dr.block[j] = 0;
+		}
+	} //direct블록들 데이터블록과 슈퍼블록 초기화
+	remove_super_block(m->inodelist[inode].single_indirect,m);
+	remove_super_block(m->inodelist[inode].double_indirect,m);// inodelist에 있는 블록들 슈퍼블록 초기화
+
+	int sn=0,s_num=0;
+	for(int j=0;j<102;j++){
+		for(int i=0;i<10;i++){
+			if((m->datablock[m->inodelist[inode].double_indirect].si.block[sn/32].n>>(sn%32)&1)==1)
+				s_num += pow(2,i);
+			sn++;
+		} //double블록에서 single 번호 읽어오기
+		for(int k=0;k<32;k++)
+			m->datablock[s_num].si.block[k].n &= 0x0000000000;
+		s_num=0;
+	} //single 블록들 초기화
+
+	for(int i=0;i<32;i++){
+		m->datablock[m->inodelist[inode].single_indirect].si.block[i].n &= 0x00000000;
+		m->datablock[m->inodelist[inode].double_indirect].si.block[i].n &= 0x00000000;
+	}  //inode에 있는 블록들 데이터블록 초기화
+	
+	m->inodelist[inode].direct=0;
+	m->inodelist[inode].single_indirect=0;
+	m->inodelist[inode].double_indirect=0;
+	//inode 초기화
+
+	clear_inode(m,inode);
+	remove_super_inode(inode,m);
+
+	for (int j = top-1; j >= 0; j--){
+		m->inodelist[now[j]].size -= 6;
+	} //현재,이전 파일들 사이즈 줄이기
 }
 
 void call_mytouch(char command_option[6][15], struct myfs* m) {
@@ -325,27 +402,27 @@ void call_mytouch(char command_option[6][15], struct myfs* m) {
 		printf("%d번째 아이노드와 %d번째 블럭에 새로운 파일을 할당했습니다.\n",void_inode, void_block);
 	}
 
-/*
+	/*
 	//현재 디렉토리에서 같은이름의 파일 찾기
 	int i = 0;
 	int flag = 0;		//0 = 없음. 1 = 있음
 	for (i = 0; i < 22; i++){
-		if (strcmp(command_option[1], m->datablock[now[top-1]].d.files[i].name) == 0){		//같은 이름의 파일이 있다면.
-			m->inodelist[m->datablock[now[top-1]].d.files[i].inode].n = now_time();
-			flag = 1;
-		}
+	if (strcmp(command_option[1], m->datablock[now[top-1]].d.files[i].name) == 0){		//같은 이름의 파일이 있다면.
+	m->inodelist[m->datablock[now[top-1]].d.files[i].inode].n = now_time();
+	flag = 1;
+	}
 	}
 	if (flag != 1){		//새로운 0바이트짜리 파일을 만든다.
-		char new_name[4];
-		sscanf(command_option[1], "%4s", new_name);
-		struct file new_file;
-		for (i = 0; i < 4; i++){
-			new_file.name[i] = new_name[i];
-		}
-		new_file.inode = print_super_inode(m);
+	char new_name[4];
+	sscanf(command_option[1], "%4s", new_name);
+	struct file new_file;
+	for (i = 0; i < 4; i++){
+	new_file.name[i] = new_name[i];
+	}
+	new_file.inode = print_super_inode(m);
 	}
 	i
-*/
+	*/
 }
 void call_myshowinode(char command_option[6][15], struct myfs m) {
 	int inode_number;
@@ -365,8 +442,12 @@ void call_myshowinode(char command_option[6][15], struct myfs m) {
 		printf("data block list : ");
 		for(block* i = b.front;i!=NULL;i = i->next)
 			printf("%d,",i->num);
+		if(m.inodelist[inode_number].single_indirect)
+			printf("%d,",m.inodelist[inode_number].single_indirect);
+		if(m.inodelist[inode_number].double_indirect)
+			printf("%d",m.inodelist[inode_number].single_indirect);
 		printf("\n");
-	}
+	}	
 }
 void call_myshowblock(char command_option[6][15],struct myfs m) {
 	int n;
@@ -696,7 +777,7 @@ int allocation_file_inode (struct myfs * m,char name[4],int flag_d_f) { // file�
 			}
 		}
 
-		strcpy(m->datablock[direct_num].d.files[at_direct].name,name); // 이름 복사
+		strcpy(m->datablock[direct_num].df.files[at_direct].name,name); // 이름 복사
 		short inode = init_inode(m,flag_d_f);
 		//short inode = print_super_inode(m);
 		m->datablock[direct_num].d.files[at_direct].inode = inode;  // 아이노드 입력
@@ -805,7 +886,7 @@ int find_file_inode (struct myfs * m, char name[4]) { // 중복검사에도 사�
 	int now_dir_datablock = find_now_dir_datablock(m);
 	for(int i=0 ; i<19 ; i++)
 	{
-		if(strcmp(m->datablock[now_dir_datablock].d.files[i].name,name)==0)
+		if(strncmp(m->datablock[now_dir_datablock].d.files[i].name,name,4)==0)
 			return m->datablock[now_dir_datablock].d.files[i].inode; // 그떄의 inode 출력
 	}
 	if(m->inodelist[now[top-1]].single_indirect){
@@ -828,7 +909,7 @@ int find_file_inode (struct myfs * m, char name[4]) { // 중복검사에도 사�
 		}
 		for(block* i = b.front;i!=NULL;i = i->next){
 			for(int j=0;j<21;j++){
-				if(strcmp(m->datablock[i->num].df.files[j].name,name)==0)
+				if(strncmp(m->datablock[i->num].df.files[j].name,name,4)==0)
 					return m->datablock[i->num].df.files[j].inode;
 			}
 		}
@@ -845,6 +926,37 @@ int find_now_dir_datablock(struct myfs * m) { //이 리턴값으로 들어가면
 	return now_datablock;
 }
 
+void dir_block_array(struct myfs* m, block_list *b,struct file e[]){
+	int index=2;
+	strcpy(e[0].name,".");
+	strcpy(e[1].name,"..");
+	e[0].inode=m->datablock[b->front->num].d.now.inode;
+	e[1].inode=m->datablock[b->front->num].d.prev.inode;
+	for(block* i = b->front;i!=NULL;i = i->next){
+		if(i==b->front){
+			for(int j=0;j<19;j++){
+				e[index].inode = m->datablock[i->num].d.files[j].inode;
+				for(int k=0;k<4;k++)
+					e[index].name[k] = m->datablock[i->num].d.files[j].name[k];
+				index++;
+			}
+		}
+		else{
+			for(int j=0;j<21;j++){
+				e[index].inode = m->datablock[i->num].df.files[j].inode;
+				for(int k=0;k<4;k++)
+					e[index].name[k] = m->datablock[i->num].df.files[j].name[k];
+				index++;
+			}
+		}
+	}
+	/*for(int i=0;i<20;i++){
+	  for(int j=0;j<4;j++)
+	  printf("%c",e[i].name[j]);
+	  printf("\n");
+	  }*/
+
+}
 void dir_block_linked(struct myfs *m,block_list *b,int inode){
 	push(b,m->inodelist[inode].direct);
 	if(m->inodelist[now[top-1]].single_indirect){
@@ -863,8 +975,8 @@ void dir_block_linked(struct myfs *m,block_list *b,int inode){
 			push(b,l);
 			l=0;
 		}
-					return;
-			}
+		return;
+	}
 }
 
 void block_linked(struct myfs *m,block_list *b,int inode){
@@ -873,9 +985,9 @@ void block_linked(struct myfs *m,block_list *b,int inode){
 	int db=0,o=0;
 	push(b,m->inodelist[inode].direct);
 	/*block * tmp = (block*)calloc(1,sizeof(block));
-	tmp->num = m->inodelist[inode].direct;
-	b->back = tmp;
-	b->front = tmp;*/
+	  tmp->num = m->inodelist[inode].direct;
+	  b->back = tmp;
+	  b->front = tmp;*/
 	fin = ceil((m->inodelist[inode].size)/(double)128)-1;
 	if(m->inodelist[inode].single_indirect!=0){
 		/*printf("%d\n",m->inodelist[inode].single_indirect);
@@ -931,12 +1043,12 @@ void push(block_list* b,int n){
 	block *tmp = (block*)calloc(1,sizeof(block));
 	tmp->num = n;
 	if(b->back==NULL){
-	b->back = tmp;
-	b->front = tmp;
+		b->back = tmp;
+		b->front = tmp;
 	}
 	else{
-	b->back->next = tmp;
-	b->back = b->back->next;
+		b->back->next = tmp;
+		b->back = b->back->next;
 	}
 }
 
@@ -947,9 +1059,6 @@ void command_clear(char command_option[][15]){
 	}
 }
 
-
-
-
-
-
-
+int cmp(const void* a,const void* b){
+	return (strncmp(((struct file*)a)->name,((struct file*)b)->name,4));
+}
