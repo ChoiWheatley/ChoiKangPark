@@ -8,7 +8,7 @@ int main(){
 	n = time(NULL);
 	t= localtime(&n);
 
-	new.year = t->tm_year-100;
+	new.year = t->tm_year;
 	new.mon = t->tm_mon+1;
 	new.day = t->tm_mday;
 	new.hour = t->tm_hour;

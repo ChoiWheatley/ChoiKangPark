@@ -68,6 +68,7 @@ int main(){
 	else{
 		fread(&m,sizeof(m),1,fp);
 	}
+
 	while(1)
 	{
 		int i = 0;
@@ -294,7 +295,7 @@ void call_myshowinode(char command_option[6][15], struct myfs m) {
 		else
 			printf("regular file\n");
 		printf("file size : %d byte\n", m.inodelist[inode_number].size);
-		printf("modified time : %d/%d/%d %d:%d:%d\n", m.inodelist[inode_number].n.year, m.inodelist[inode_number].n.mon, m.inodelist[inode_number].n.day, m.inodelist[inode_number].n.hour, m.inodelist[inode_number].n.min, m.inodelist[inode_number].n.sec);
+		printf("modified time : %d/%d/%d %d:%d:%d\n", m.inodelist[inode_number].n.year+1900, m.inodelist[inode_number].n.mon, m.inodelist[inode_number].n.day, m.inodelist[inode_number].n.hour, m.inodelist[inode_number].n.min, m.inodelist[inode_number].n.sec);
 		printf("data block list : ");
 		for(block* i = b.front;i!=NULL;i = i->next)
 			printf("%d,",i->num);
@@ -489,7 +490,7 @@ struct time_now now_time (void) {
 	n = time(NULL);
 	t= localtime(&n);
 
-	new.year = t->tm_year+1900;
+	new.year = t->tm_year;
 	new.mon = t->tm_mon+1;
 	new.day = t->tm_mday;
 	new.hour = t->tm_hour;
