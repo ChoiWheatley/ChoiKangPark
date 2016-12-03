@@ -517,7 +517,7 @@ void clear_inode(struct myfs* m,int inode){
 
 int print_super_inode(struct myfs* m) {
 	int i = 0;
-	for (i = 0; ((m->super_inode[i/32].a >> (i%32)) & 0x1) != 0; i++)
+	for (i = 1; ((m->super_inode[i/32].a >> (i%32)) & 0x1) != 0; i++)
 	{
 		if(i==512)return -1;
 	}
@@ -527,7 +527,7 @@ int print_super_inode(struct myfs* m) {
 
 int print_super_block(struct myfs* m) {
 	int i = 0;
-	for (i = 0; ((m->super_block[i/32].a >> (i%32)) & 0x1) != 0; i++)
+	for (i = 1; ((m->super_block[i/32].a >> (i%32)) & 0x1) != 0; i++)
 	{
 		if(i==1023) return -1;
 	}
@@ -666,7 +666,7 @@ short init_inode (struct myfs * m,int flag_d_f) { // 사이즈 없음 나중에�
 int find_file_inode (struct myfs * m, char name[4]) { // 중복검사에도 사용가능
 	//현재 디렉토리안에서만 같은 이름의 파일을 찾아서 그것의 아이노드
 	int now_dir_datablock = find_now_dir_datablock(m);
-	for(int i=0 ; i<22 ; i++)
+	for(int i=0 ; i<19 ; i++)
 	{
 		if(strcmp(m->datablock[now_dir_datablock].d.files[i].name,name)==0)
 			return m->datablock[now_dir_datablock].d.files[i].inode; // 그떄의 inode 출력
