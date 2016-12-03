@@ -26,6 +26,7 @@ short init_inode (struct myfs * m,int flag_d_f); // 사이즈 없음 나중에�
 int find_file_inode (struct myfs * m, char name[4]);
 int find_now_dir_datablock(struct myfs * m);
 
+void dir_block_linked(struct myfs*,block_list*,int);
 void block_linked(struct myfs*,block_list*,int);
 void push(block_list*,int);
 //void clean_block_list(block_list*);
@@ -228,9 +229,9 @@ void call_myls(struct myfs m,char command_option[6][15]) {
 	//아래거는 if(==0)일 경우
 	block_list b={0};
 	int inode = now[top-1];
-	file element[510]={0};
+	struct file element[510]={0};
 	if(option==0){
-		dir_block_linked(&b,now[top-1]);
+		dir_block_linked(&m,&b,now[top-1]);
 	}
 		
 	
