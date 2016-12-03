@@ -226,9 +226,12 @@ void call_myls(struct myfs m,char command_option[6][15]) {
 	//절대/상대경로일경우 현재 디렉 이름을 리턴하는 함수
 	//이름을 넣으면 디렉의 아이노드 리턴하는 함수
 	//아래거는 if(==0)일 경우
-	
+	block_list b={0};
 	int inode = now[top-1];
-	if(option==0){}
+	file element[510]={0};
+	if(option==0){
+		dir_block_linked(&b,now[top-1]);
+	}
 		
 	
 	
