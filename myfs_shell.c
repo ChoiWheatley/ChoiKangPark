@@ -176,10 +176,18 @@ int main(){
 
 ///////////////////////////////////// call 함수 ///////////////////////////////////
 void call_mypwd(char command_option[6][15],struct myfs* m) {
-	for(int i=0;i<top;i++){
+	//re
+	int i = top-1;
+	for (i = 0; i <= top-1; i++){
+		printf("%s/", m->datablock[now[i]].d.now.name);
+	}
+
+	//last
+/*	for(int i=0;i<top;i++){
 		for(int j=0;j<4;j++)
 			printf("%c",m->datablock[now[i]].d.now.name[j]);
 	}
+*/
 }
 void call_mystate(char command_option[6][15], struct myfs m) {
 	int free_inode = 0, free_block = 0;
@@ -296,7 +304,6 @@ void call_myrmdir(struct myfs* m,char command_option[6][15]) {
 }
 
 void call_myrm(char command_option[6][15]) {
-	printf("myrm");
 }
 //상은
 void call_mytouch(char command_option[6][15], struct myfs* m) {
@@ -533,7 +540,6 @@ void call_mycpfrom(char command_option[6][15],struct myfs* m) {
 
 
 void call_mymv(char command_option[6][15]) {
-	printf("mymv");
 }
 ///////////////////////////////////// call 함수 ///////////////////////////////////
 struct time_now now_time (void) {
