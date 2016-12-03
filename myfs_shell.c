@@ -43,17 +43,14 @@ void call_myls(struct myfs* m,char command_option[6][15]);
 void call_mycat(struct myfs *m,char command_option[6][15]);
 void call_mytree(char command_option[6][15]);
 void call_mycd(char command_option[6][15]);
-//승현
 void call_mymkdir(char command_option[6][15],struct myfs * m);
 void call_myrmdir(struct myfs* m,char command_option[6][15]);
 void call_myrm(struct myfs* m,char command_option[6][15]);
-//상은
 void call_mytouch(char command_option[6][15], struct myfs* m);
 void call_myshowinode(char command_option[6][15],struct myfs m);
 void call_myshowblock(char command_option[6][15],struct myfs m);
 
 void call_myshowfile(struct myfs* m,char command_option[6][15]);
-//민석
 void call_mycp(struct myfs* m,char command_option[6][15]);
 void call_mycpto(struct myfs *m,char command_option[6][15]);
 void call_mycpfrom(char command_option[6][15],struct myfs* m);
@@ -288,7 +285,6 @@ void call_mytree(char command_option[6][15]) {
 void call_mycd(char command_option[6][15]) {
 	printf("mycd");
 }
-//승현
 void call_mymkdir(char command_option[6][15],struct myfs * m) {
 	char dir_name[5]={0};
 	int void_inode;
@@ -491,7 +487,6 @@ void call_myshowfile(struct myfs* m,char command_option[6][15]) {
 		}
 	}
 }
-//민석
 void call_mycp(struct myfs* m,char command_option[6][15]) {
 	block_list bl={0};
 	char name[5];
