@@ -65,6 +65,12 @@ int main(){
 	else{
 		fread(&m,sizeof(m),1,fp);
 	}
+
+	for(int i=0;i<16;i++){
+		for(int j=0;j<32;j++)
+			printf("%d",m.super_inode[i].a>>j&1);
+		printf("\n");
+	}
 	while(1)
 	{
 		int i = 0;
@@ -203,23 +209,23 @@ void call_mymkdir(char command_option[6][15],struct myfs * m) {
 	//	allocation_file_inode(m,co
 }
 void call_myrmdir(struct myfs* m,char command_option[6][15]) {
-		char name[5];
-		strncpy(name,command_option[1],4);
-		int inode = find_file_inode(m,name);
-		if(inode==0){
-			printf("error:폴더가 없습니다.\n");
-			return;
-		}
-		if(m->inodelist[inode].size){
-			printf("error:폴더가 비어 있지 않습니다.\n");
-			return;
-		}
-		if(m->inodelist[inode].d_f==0){
-			printf("error:폴더가 아닙니다.\n");
-			return;
-		}
-		remove_super_block(m->inodelist[inode].direct,m);
-		clear_inode(m,inode);
+	char name[5];
+	strncpy(name,command_option[1],4);
+	int inode = find_file_inode(m,name);
+	if(inode==0){
+		printf("error:폴더가 없습니다.\n");
+		return;
+	}
+	if(m->inodelist[inode].size){
+		printf("error:폴더가 비어 있지 않습니다.\n");
+		return;
+	}
+	if(m->inodelist[inode].d_f==0){
+		printf("error:폴더가 아닙니다.\n");
+		return;
+	}
+	remove_super_block(m->inodelist[inode].direct,m);
+	clear_inode(m,inode);
 }
 
 void call_myrm(char command_option[6][15]) {
@@ -284,11 +290,11 @@ void call_myshowfile(struct myfs* m,char command_option[6][15]) {
 	int s,l,start,fin;
 	sscanf(command_option[1],"%d",&s);
 	sscanf(command_option[2],"%d",&l);
-	
+
 	start = s/128;   fin = l/128;
 
 	block_linked(m,&b,inode);
-	
+
 	int n=0;
 	for(block* i = b.front;i!=NULL;i = i->next){
 		if(n==start){
@@ -386,14 +392,14 @@ void call_mycpfrom(char command_option[6][15],struct myfs* m) {
 	FILE* fc = fopen(c_name,"r");
 	if(fc==NULL){printf("error:가져오려는 파일이 존재하지 않습니다.\n"); return;}
 	else{
-	char name[5];
-	int flag_d_f=0; //files
-	strncpy(name,command_option[2],4);
-	int void_inode = allocation_file_inode(m,name,flag_d_f);
-	int new_direct_block = m->inodelist[void_inode].direct = print_super_block(m); 
-	int c,new_double_block,new_single_block;
-	int b=0,db=0,size=0,new_block,sb=0,n=0;
-	int o=0,v=0;
+		char name[5];
+		int flag_d_f=0; //files
+		strncpy(name,command_option[2],4);
+		int void_inode = allocation_file_inode(m,name,flag_d_f);
+		int new_direct_block = m->inodelist[void_inode].direct = print_super_block(m); 
+		int c,new_double_block,new_single_block;
+		int b=0,db=0,size=0,new_block,sb=0,n=0;
+		int o=0,v=0;
 		while((c=getc(fc))!=EOF){
 			m->datablock[new_direct_block].dr.block[b]=c;
 			b++; //다이렉트 블록의 크기 체크
@@ -524,35 +530,35 @@ int allocation_file_inode (struct myfs * m,char name[4],int flag_d_f) { // file�
 		}
 		if(!(m->inodelist[now[top-1]].single_indirect))
 			m->inodelist[now[top-1]].single_indirect = print_super_block(m);
-			int single_num = m->inodelist[now[top-1]].single_indirect;
-		    int single_files = (m->inodelist[now[top-1]].size - 126)/6; //single_indirect에 있는 파일 수
-			int at_single = single_files / 21;
-			int at_direct = single_files % 21;
-			int direct_num=0;
-			if(at_direct == 0){   //새로 다이렉트 블록을 할당해야 하는 경우
-				direct_num = print_super_block(m);
+		int single_num = m->inodelist[now[top-1]].single_indirect;
+		int single_files = (m->inodelist[now[top-1]].size - 126)/6; //single_indirect에 있는 파일 수
+		int at_single = single_files / 21;
+		int at_direct = single_files % 21;
+		int direct_num=0;
+		if(at_direct == 0){   //새로 다이렉트 블록을 할당해야 하는 경우
+			direct_num = print_super_block(m);
 			for(int i=at_single*10;i<at_single*10+10;i++){
 				if(direct_num>>(i%10))
 					m->datablock[single_num].si.block[i/32].n += pow(2,i);
 			}
-			}
+		}
 
-			else{	//가장 끝에 있는 다이렉트 블록을 읽어와야 할 경우
+		else{	//가장 끝에 있는 다이렉트 블록을 읽어와야 할 경우
 
 			for(int i=at_single*10;i<at_single*10+10;i++){
 				if(m->datablock[single_num].si.block[i/32].n>>(i%32)==1)
 					direct_num += pow(2,i%10);
-				}
 			}
+		}
 
-				strcpy(m->datablock[direct_num].d.files[at_direct].name,name); // 이름 복사
-				short inode = init_inode(m,flag_d_f);
-				//short inode = print_super_inode(m);
-				m->datablock[direct_num].d.files[at_direct].inode = inode;  // 아이노드 입력
-				m->inodelist[now[top-1]].size += 6; //현재 파일 사이즈 증가
-				return inode;
-			}
-		//이 이상이면 싱글 더블 추가해야함
+		strcpy(m->datablock[direct_num].d.files[at_direct].name,name); // 이름 복사
+		short inode = init_inode(m,flag_d_f);
+		//short inode = print_super_inode(m);
+		m->datablock[direct_num].d.files[at_direct].inode = inode;  // 아이노드 입력
+		m->inodelist[now[top-1]].size += 6; //현재 파일 사이즈 증가
+		return inode;
+	}
+	//이 이상이면 싱글 더블 추가해야함
 	else{
 		printf("이미 있는 파일임\n");
 		return check;
