@@ -873,7 +873,12 @@ void rm_file_inode (struct myfs * m,char name[4],int flag_d_f) { // file이름 �
 					m->datablock[m->inodelist[check].single_indirect].si.block[0].n &= 0x00000;
 				m->inodelist[check].single_indirect=0;
 				}
-				if(last_file==0){}
+				if(last_file==0){
+					for(int i=last_block*10;i<last_block*10+10;i++){
+						if(m->datablock[m->inodelist[check].single_indirect].si.block[i/32].n>>(i%32)&1==1) 
+							m->datablock[m->inodelist[check].single_indirect].si.block[i/32].n -= pow(2,(i%32));
+					}
+				}
 			}
 			else{
 				m->datablock[i->num].df.files[j].inode = m->datablock[last_block].df.files[last_file].inode;
