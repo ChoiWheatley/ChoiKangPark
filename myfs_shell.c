@@ -591,6 +591,9 @@ void call_mycp(struct myfs* m,char command_option[6][15]) {
 		}
 	}
 	m->inodelist[void_inode].size=m->inodelist[inode].size;
+				for (int j = top-1; j >= 0; j--){
+					m->inodelist[now[j]].size += m->inodelist[inode].size;
+				}
 }
 void call_mycpto(struct myfs *m,char command_option[6][15]) {
 	block_list b={0};
@@ -666,6 +669,9 @@ void call_mycpfrom(char command_option[6][15],struct myfs* m) {
 			if(sb==102&&db==102)break; //single이랑 double 다 차면 끝
 		}
 		m->inodelist[void_inode].size=size;
+				for (int j = top-1; j >= 0; j--){
+					m->inodelist[now[j]].size += size;
+				}
 	}
 	fclose(fc);
 }
@@ -796,9 +802,6 @@ int allocation_file_inode (struct myfs * m,char name[4],int flag_d_f) { // file�
 				//short inode = print_super_inode(m);
 				m->datablock[now_dir_datablock].d.files[i].inode = inode;  // 아이노드 입력
 				//너무 끔찍하다. 상위폴더의 사이즈도 증가시켜야 한다. 
-				for (int j = top-1; j >= 0; j--){
-					m->inodelist[now[j]].size += 6;
-				}
 				//m->inodelist[now[top-1]].size += 6; //현재 파일 사이즈 증가
 				return inode;
 			}
@@ -830,9 +833,6 @@ int allocation_file_inode (struct myfs * m,char name[4],int flag_d_f) { // file�
 		short inode = init_inode(m,flag_d_f);
 		//short inode = print_super_inode(m);
 		m->datablock[direct_num].df.files[at_direct].inode = inode;  // 아이노드 입력
-		for (int j = top-1; j >= 0; j--){
-			m->inodelist[now[j]].size += 6;			//single 파일사이즈 올림
-		}
 		return inode;
 	}
 	//이 이상이면 싱글 더블 추가해야함
