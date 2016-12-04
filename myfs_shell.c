@@ -21,6 +21,7 @@ void print_many_inode (unsigned int inode_number, struct myfs* m);		//계속 myp
 void print_many_block (unsigned int block_number, struct myfs* m);
 
 int allocation_file_inode (struct myfs * m,char name[4],int flag_d_f); // file이름 받아 indoe할당받고 저장, file이름도
+void show_files(struct myfs*);
 void rm_file_inode (struct myfs * m,char name[4],int flag_d_f);
 short init_inode (struct myfs * m,int flag_d_f); // 사이즈 없음 나중에해야됌
 int find_file_inode (struct myfs * m, char name[4]);
@@ -82,12 +83,14 @@ int main(){
 		if (now[top-1] == 1){
 			printf("/");
 		}
-		for(int i=0;i<top;i++){
-			for(int j=1;j<4;j++){
-				printf("%c",m.datablock[m.inodelist[now[i]].direct].d.now.name[j]);
+		else{
+			for(int i=0;i<top;i++){
+				for(int j=0;j<4;j++){
+					printf("%c",m.datablock[m.inodelist[now[i]].direct].d.now.name[j]);
+				}
+				if (i != 0)
+					printf("/");
 			}
-			if (top != 1)
-				printf("/");
 		}
 		printf(" ]$ ");
 		fgets(tmp_input, 80, stdin);        //먼저 최대 80문자를 임시로 tmp_input에 때려박는다.
@@ -168,6 +171,8 @@ int main(){
 				print_many_block(option_integer[1], &m);
 			else if (strcmp(command_option[0], "myfindinode") == 0)
 				printf("%d번째 아이노드에 할당되어있다.\n",find_file_inode(&m, command_option[1]));
+			else if(strcmp(command_option[0],"myshowfiles")==0)
+				show_files(&m);
 			printf("\n");
 			command_clear(command_option);
 			fp = fopen("myfs.c","w");
@@ -179,12 +184,17 @@ int main(){
 
 ///////////////////////////////////// call 함수 ///////////////////////////////////
 void call_mypwd(char command_option[6][15],struct myfs* m) {
-	//real reeeeeeee
-	for (int i = 0; i < top; i++){
-		for (int j = 1; j < 4; j++){
-			printf("%c", m->datablock[m->inodelist[now[i]].direct].d.now.name[j]);
-		}
+	if (now[top-1] == 1){
 		printf("/");
+	}
+	else{
+		for(int i=0;i<top;i++){
+			for(int j=0;j<4;j++){
+				printf("%c",m->datablock[m->inodelist[now[i]].direct].d.now.name[j]);
+			}
+			if (i != 0)
+				printf("/");
+		}
 	}
 	printf("\n");
 }
@@ -832,6 +842,17 @@ int allocation_file_inode (struct myfs * m,char name[4],int flag_d_f) { // file�
 	}
 	return 0;
 }
+void show_files(struct myfs *m){
+	for(int i=0;i<19;i++){
+		printf("name:");
+		for(int j=0;j<4;j++)
+			printf("%c",m->datablock[0].d.files[i].name[j]);
+		printf("inode:%d",m->datablock[0].d.files[i].inode);
+		printf("\n");
+	}
+}
+
+
 
 void rm_file_inode (struct myfs * m,char name[4],int flag_d_f) { // file이름 받아 indoe할당받고 저장, file이름도
 	int now_dir_datablock = find_now_dir_datablock(m);
@@ -845,17 +866,6 @@ void rm_file_inode (struct myfs * m,char name[4],int flag_d_f) { // file이름 �
 	block* i;
 	if(check)
 	{
-		for(int i=0 ; i<19 ; i++)
-		{
-			if(m->datablock[now_dir_datablock].d.files[i].inode == check)
-			{
-				for(int j=0 ; j<4 ; j++)
-					m->datablock[now_dir_datablock].d.files[i].name[j]='\0'; // 이름 삭제
-				m->datablock[now_dir_datablock].d.files[i].inode = 0;  // 아이노드 삭제 
-				direct_empty = i;
-				break;
-			}
-		}
 		if(m->inodelist[check].single_indirect){
 			for(int i=0;i<=at_single;i++){
 				for(int j=0;j<10;j++){
@@ -871,25 +881,48 @@ void rm_file_inode (struct myfs * m,char name[4],int flag_d_f) { // file이름 �
 			}
 
 			for(int k=0;k<21;k++){
-				if(m->datablock[last_block].df.files[k].inode==0)
+				if(m->datablock[last_block].df.files[k].name[0]==0){
 					last_file=k-1;
-				break;
+					break;
+				}
 			}  //그 폴더의 마지막 파일을 찾음
 		}
 
 		else{
 			for(int i=0;i<19;i++){
-				if(m->datablock[now_dir_datablock].d.files[i].inode==0){
+				if(m->datablock[now_dir_datablock].d.files[i].name[0]==0){
 					last_block=now_dir_datablock;
 					last_file=i-1;
 					break;
 				}
 			}
 		}
+		for(int i=0 ; i<19 ; i++)
+		{
+			if(m->datablock[now_dir_datablock].d.files[i].inode == check)
+			{
+				for(int j=0 ; j<4 ; j++)
+					m->datablock[now_dir_datablock].d.files[i].name[j]=0; // 이름 삭제
+				m->datablock[now_dir_datablock].d.files[i].inode = 0;  // 아이노드 삭제 
+				direct_empty = i;
+				break;
+			}
+		}
 
-		if(direct_empty){ //다이렉트에 빈 파일이 생길 경우
+		if(direct_empty&&m->inodelist[check].single_indirect==0){ //다이렉트에 빈 파일이 생길 경우&&single없음
+			m->datablock[now_dir_datablock].d.files[direct_empty].inode = m->datablock[last_block].d.files[last_file].inode;
+			m->datablock[last_block].d.files[last_file].inode=0;
+			strncpy(m->datablock[now_dir_datablock].d.files[direct_empty].name,m->datablock[last_block].d.files[last_file].name,4); // 이름 복사
+			for(int i=0;i<4;i++)
+				m->datablock[last_block].d.files[last_file].name[i]=0;
+			return;
+		}
+		else if(direct_empty&&m->inodelist[check].single_indirect!=0){ //다이렉트에 빈 파일이 생길 경우&&single없음
 			m->datablock[now_dir_datablock].d.files[direct_empty].inode = m->datablock[last_block].df.files[last_file].inode;
+			m->datablock[last_block].df.files[last_file].inode=0;
 			strncpy(m->datablock[now_dir_datablock].d.files[direct_empty].name,m->datablock[last_block].df.files[last_file].name,4); // 이름 복사
+			for(int i=0;i<4;i++)
+				m->datablock[last_block].df.files[last_file].name[i]=0;
 			return;
 		}
 		else if(last_file==-1) return;//다이렉트의 첫번째 파일이 지워질 경우
@@ -907,9 +940,9 @@ void rm_file_inode (struct myfs * m,char name[4],int flag_d_f) { // file이름 �
 			}   //같은 아이노드 번호 파일을 찾아서 없앰
 
 			if(i->num==last_block&&j==last_file){
-			   	if(last_block==0&&last_file==0){
+				if(last_block==0&&last_file==0){
 					m->datablock[m->inodelist[check].single_indirect].si.block[0].n &= 0x00000;
-				m->inodelist[check].single_indirect=0;
+					m->inodelist[check].single_indirect=0;
 				}
 				if(last_file==0){
 					for(int i=last_block*10;i<last_block*10+10;i++){
