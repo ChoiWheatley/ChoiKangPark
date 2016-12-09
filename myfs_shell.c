@@ -2,36 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-<<<<<<< HEAD
-#include "struct_new.h" // 구조체
-void call_mypwd(char command_option[6][15],struct myfs* m);
-void call_mystate(char command_option[6][15]);
-
-void call_myls(char command_option[6][15]);
-void call_mycat(char command_option[6][15]);
-void call_mytree(char command_option[6][15]);
-void call_mycd(char command_option[6][15]);
-//승현
-void call_mymkdir(char command_option[6][15]);
-void call_myrmdir(char command_option[6][15]);
-void call_myrm(char command_option[6][15]);
-//상은
-void call_mytouch(char command_option[6][15]);
-void call_myshowinode(char command_option[6][15]);
-void call_myshowblock(char command_option[6][15]);
-
-void call_myshowfile(char command_option[6][15]);
-//민석
-void call_mycp(char command_option[6][15]);
-void call_mycpto(char command_option[6][15]);
-void call_mycpfrom(char command_option[6][15],struct myfs* m);
-void call_mymv(char command_option[6][15]);
-
-
-
-char top=1;
-short now[100]={0};
-=======
 #include <stdbool.h>
 #include "struct_new.h" // 구조체
 #include <math.h>
@@ -90,7 +60,6 @@ void call_mycpto(struct myfs *m,char command_option[6][15]);
 void call_mycpfrom(char command_option[6][15],struct myfs* m);
 void call_mymv(char command_option[6][15], struct myfs* m);
 ///////////////////////////////////// call 함수 ///////////////////////////////////
->>>>>>> 19fb54c07c846a70605f43f9866556bc3438e90e
 int main(){
 	FILE* fp;
 	struct myfs m;
@@ -110,79 +79,6 @@ int main(){
 		call_mytouch(command_option,&m);
 		}*/
 
-<<<<<<< HEAD
-	int i = 0;
-	int j = 0;
-	int all = 0;
-	char tmp_input[80] = {0};
-	char command_option[6][15] = {0};
-
-	printf("[");
-	for(int i=0;i<top;i++){
-		for(int j=0;j<4;j++)
-			printf("%c",m.datablock[now[i]].d.now.name[j]);
-	}
-	printf("]$");
-	fgets(tmp_input, 80, stdin);        //먼저 최대 80문자를 임시로 tmp_input에 때려박는다.
-	tmp_input[strlen(tmp_input)-1]=0;
-
-	if(strncmp(tmp_input,"my",2)) //앞에 my라는 말이 붙으면
-		system(tmp_input);
-	else // "my"가 없으면
-	{
-		while(tmp_input[all] != 0)
-		{
-			if(tmp_input[all]==' '){
-				i++;
-				all++;
-				j=0;
-				continue;
-			}
-			else{
-				command_option[i][j]=tmp_input[all];
-				j++;
-				all++;
-			}
-		}
-		i=0;j=0;all=0;
-
-		if(strcmp(command_option[0],"myls")==0)
-			call_myls(command_option);
-		else if(strcmp(command_option[0],"mycat")==0)
-			call_mycat(command_option);
-		else if(strcmp(command_option[0],"myshowfile")==0)
-			call_myshowfile(command_option);
-		else if(strcmp(command_option[0],"mypwd")==0)
-			call_mypwd(command_option,&m);
-		else if(strcmp(command_option[0],"mycd")==0)
-			call_mycd(command_option);
-		else if(strcmp(command_option[0],"mycp")==0)
-			call_mycp(command_option);
-		else if(strcmp(command_option[0],"mycpto")==0)
-			call_mycpto(command_option);
-		else if(strcmp(command_option[0],"mycpfrom")==0)
-			call_mycpfrom(command_option,struct myfs* m);
-		else if(strcmp(command_option[0],"mymkdir")==0)
-			call_mymkdir(command_option);
-		else if(strcmp(command_option[0],"myrmdir")==0)
-			call_myrmdir(command_option);
-		else if(strcmp(command_option[0],"myrm")==0)
-			call_myrm(command_option);
-		else if(strcmp(command_option[0],"mymv")==0)
-			call_mymv(command_option);
-		else if(strcmp(command_option[0],"mytouch")==0)
-			call_mytouch(command_option);
-		else if(strcmp(command_option[0],"myshowinode")==0)
-			call_myshowinode(command_option);
-		else if(strcmp(command_option[0],"myshowblock")==0)
-			call_myshowblock(command_option);
-		else if(strcmp(command_option[0],"mystate")==0)
-			call_mystate(command_option);
-		else if(strcmp(command_option[0],"mytree")==0)
-			call_mytree(command_option);
-		else if(strcmp(command_option[0],"byebye")==0)
-			exit(1);
-=======
 	while(1)
 	{
 		int i = 0;
@@ -293,28 +189,10 @@ int main(){
 			fp = fopen("myfs.c","w");
 			fwrite(&m,sizeof(m),1,fp);
 		}
->>>>>>> 19fb54c07c846a70605f43f9866556bc3438e90e
 	}
 	return 0;
 }
 
-<<<<<<< HEAD
-
-void call_mypwd(char command_option[6][15],struct myfs* m) {
-	for(int i=0;i<top;i++){
-		for(int j=0;j<4;j++)
-			printf("%c",m->datablock[now[i]].d.now.name[j]);
-	}
-}
-void call_mystate(char command_option[6][15]) {
-	printf("mystate");
-}
-void call_myls(char command_option[6][15]) {
-	printf("myls");
-}
-void call_mycat(char command_option[6][15]) {
-	printf("mycat");
-=======
 ///////////////////////////////////// call 함수 ///////////////////////////////////
 void call_mypwd(char command_option[6][15],struct myfs* m) {
 	if (now[top-1] == 1){
@@ -477,7 +355,6 @@ void call_mycat(struct myfs *m,char command_option[6][15]) {
 		strncpy (file_name, command_option[1], 4);
 		inode = now[top-1];
 	}
-<<<<<<< HEAD
 	file_inode = find_file_inode(m,file_name,inode);
 	   if(file_inode==-1){printf("error:파일이 존재하지 않습니다.\n");return;}
 	   block_list b={0};
@@ -487,97 +364,10 @@ void call_mycat(struct myfs *m,char command_option[6][15]) {
 	   printf("%c",m->datablock[i->num].dr.block[j]);
 	   }
 	   }
-=======
->>>>>>> 19fb54c07c846a70605f43f9866556bc3438e90e
->>>>>>> e857a2faebbc7616d9ade26a0fca6d61de1e3664
 }
 void call_mytree(char command_option[6][15]) {
 	printf("mytree");
 }
-<<<<<<< HEAD
-void call_mycd(char command_option[6][15]) {
-	printf("mycd");
-}
-//승현
-void call_mymkdir(char command_option[6][15]) {
-	printf("mymkdir");
-}
-void call_myrmdir(char command_option[6][15]) {
-	printf("myrmdir");
-}
-void call_myrm(char command_option[6][15]) {
-	printf("myrm");
-}
-//상은
-void call_mytouch(char command_option[6][15]) {
-	printf("mytouch");
-}
-void call_myshowinode(char command_option[6][15]) {
-	printf("myshowinode");
-}
-void call_myshowblock(char command_option[6][15]) {
-	printf("myshowblock");
-}
-void call_myshowfile(char command_option[6][15]) {
-	printf("myshowfile");
-}
-//민석
-void call_mycp(char command_option[6][15]) {
-	printf("mycp");
-}
-void call_mycpto(char command_option[6][15]) {
-	printf("mycpto");
-}
-void call_mycpfrom(char command_option[6][15],struct myfs* m) {
-	int void_block = print_super_block(*m),void_inode = print_super_inode(*m);
-	int b=0,db=0,size=0,new_block,single_full=0,sb=0;
-	FILE* fc = fopen("command_option[1]","r");
-	if(fc==NULL) return;
-	else{
-		while((c=getc(fc))!=EOF){
-			m->datablock[void_block].dr.block[db]=c;
-			fseek(fc,1,SEEK_CUR);
-			b++; //다이렉트 블록의 크기 체크
-			if(b==128){
-				if(db==102){
-					if(sb==0)
-					new_double_block = m->inodelist[void_inode].double_indirect = print_super_block(*m);
-					new_single_block = print_super_block(*m);
-				for(int i=0;i<10;i++){
-					if((new_single_block>>i&1)==1)
-						m.datablock[new_double_block] += pow(2,n);
-					n++;   //double에 10비트 할당
-					if(n==32){ 
-						n=0;
-						new_single_block = print_super_block(*m);
-					}
-				}
-				db=0; sb++;
-				}
-				if(db==0)
-				new_single_block = m->inodelist[void_inode].single_indirect = print_super_block();
-				new_direct_block = print_super_block();
-				for(int i=0;i<10;i++){
-					if((new_direct_block>>i&1)==1)
-						m.datablock[new_single_block] += pow(2,n);
-					n++;   //single에 10비트 할당
-					if(n==32){ 
-						n=0;
-						new_direct_block = print_super_block();
-					}
-				}
-				db++; //10비트 한번 넣을때마다 하나씩 올라감
-				b=0;
-				}
-			if(sb==102&&db==102)return; //single이랑 double 다 차면 끝
-			}
-		}
-	}
-}
-
-void call_mymv(char command_option[6][15]) {
-	printf("mymv");
-=======
 void call_mycd(char command_option[6][15], struct myfs* m) {
 	char c=0;
 	int now_tmp[100]={0},top_tmp=1;
@@ -1053,7 +843,6 @@ void call_mycp(struct myfs* m,char command_option[6][15]) {
 			if(len == before_name+i) break;
 			first_file_name[i] = command_option[1][before_name+i];
 		} 
-		printf("2.%s %d \n",first_file_name,first_inode);
 	}
 	//만들려고 하는 파일 이름을 맨 끝에서 가져옴 
 	else{
@@ -1497,7 +1286,6 @@ int allocation_file_inode (struct myfs * m,char name[4],int flag_d_f,int inode) 
 				} //single에서 하나씩 읽어들여 빈 곳 찾기
 				printf("l:%d\n",l);
 				if(l==0){ //다이렉트 새로 할당할 경우
-					printf("외않와");
 					n -= 10;
 					new_direct = print_super_block(m);
 					for(int k=0;k<10;k++){
@@ -1930,7 +1718,6 @@ void command_clear(char command_option[][15]){
 
 int cmp(const void* a,const void* b){
 	return (strncmp(((struct file*)a)->name,((struct file*)b)->name,4));
->>>>>>> 19fb54c07c846a70605f43f9866556bc3438e90e
 }
 
 int path_to_inode(char path[],struct myfs *m){
