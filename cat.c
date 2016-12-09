@@ -279,7 +279,7 @@ void call_myls(struct myfs* m,char command_option[6][15]) {
 	}
 }
 void call_mycat(struct myfs *m,char command_option[6][15]) {
-	if(command_option[2][0]==0){
+	if(command_option[2][0]==0){		//꺽쇠가 없다면,
 		char name[5];
 		int flag_d_f=0; // files
 		strncpy(name,command_option[1],4);
@@ -290,6 +290,31 @@ void call_mycat(struct myfs *m,char command_option[6][15]) {
 		for(block* i = b.front;i!=NULL;i = i->next){
 			for(int j=0;j<128;j++)
 				printf("%c",m->datablock[i->num].dr.block[j]);
+		}
+	}
+	else{
+		int i;
+		int j;
+		int flag = 0;						//0 : for문 끝났을 때에도 0이면 오류, 아니면 1
+		char push_file_names[5][5] = {0};	//꺽쇠 전 합칠 인자의 파일들
+
+		for (i = 1; i < 6; i++){
+			if (i == 1 && command_option[i][0] == '>'){			//cat > file 같이 키보드 입력으로부터 정보를 받아야 하는 경우는 굳이 필요없기 때문에 버린다.
+				printf("우리는 그런 기능 제공하지 않아요\n");
+				return;
+			}
+			else if (command_option[i][0] == '>'){
+				for (j = 0; j < i; j++){
+					if (find_file_inode(m, command_option[j]) == 0){
+						printf("err:파일이 존재하지 않는데 어쩌라구.\n");
+						return;
+					}
+				}
+			}
+		}
+		if (flag == 0){
+			printf("오류가 났어요\n");
+			return;
 		}
 	}
 }
@@ -1051,12 +1076,12 @@ void block_linked(struct myfs *m,block_list *b,int inode){
 	int l=0,n=0,fin,sn=0; // n은 모두 블럭에서 열을 담당
 	int s_num=0,k=0,sk=0,bcnt=0; // k는 모두 블럭에서 행을 담당
 	int db=0,o=0;
-	push(b,m->inodelist[inode].direct);
+	push(b,m->inodelist[inode].direct);		//m->inodelist[inode].direct : 첫번째 블록 넘버
 	/*block * tmp = (block*)calloc(1,sizeof(block));
 	  tmp->num = m->inodelist[inode].direct;
 	  b->back = tmp;
 	  b->front = tmp;*/
-	fin = ceil((m->inodelist[inode].size)/(double)128)-1;
+	fin = ceil((m->inodelist[inode].size)/(double)128)-1;		//ceil 함수 : 올림함수
 	if(m->inodelist[inode].single_indirect!=0){
 		/*printf("%d\n",m->inodelist[inode].single_indirect);
 		  for(int l=0;l<32;l++){
@@ -1068,7 +1093,7 @@ void block_linked(struct myfs *m,block_list *b,int inode){
 		  }
 		  printf("\n");
 		  o=0;*/ 
-		while(fin!=0&&bcnt!=102){
+		while(fin!=0&&bcnt!=102){								//도데체 fin이랑 bct가 뭐임
 			for(int j=0;j<10;j++){
 				if((m->datablock[m->inodelist[inode].single_indirect].si.block[n/32].n>>(n%32)&1)==1){
 					l += pow(2,j);
