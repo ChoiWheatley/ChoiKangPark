@@ -360,8 +360,12 @@ void call_mycat(struct linked_list * li,struct myfs *m,char command_option[6][15
 		strncpy(command_option[1],target_name,4);
 
 
-		if(find_file_inode(m,target_name,now[top-1])!=-1)
+		if(find_file_inode(m,target_name,now[top-1])!=-1) {
+			linked_init(li);
+			get_tree(li,*m,0);
+			apply_minus_size(li,m,find_file_inode(m,target_name,now[top-1]));
 			call_myrm(li,m,command_option);
+		}
 		block_list bl={0};
 
 		for(int i=0;i<3;i++){
@@ -371,6 +375,8 @@ void call_mycat(struct linked_list * li,struct myfs *m,char command_option[6][15
 
 		int flag_d_f=0; // files
 		int void_inode = allocation_file_inode(m,target_name,0,now[top-1]);
+		linked_init(li);
+		get_tree(li,*m,0);
 		int new_direct_block = m->inodelist[void_inode].direct = print_super_block(m); 
 		int c,new_double_block,new_single_block;
 		int b=0,db=0,size=0,new_block,sb=0,n=0;
@@ -413,6 +419,7 @@ void call_mycat(struct linked_list * li,struct myfs *m,char command_option[6][15
 			}
 		}
 		m->inodelist[void_inode].size=size;
+		apply_plus_size(li,m,void_inode);
 	}
 
 
@@ -654,7 +661,7 @@ void call_myrmdir(struct myfs* m,char command_option[6][15]) {
 	}
 	file_inode = find_file_inode(m,file_name,inode);
 	if(file_inode==-1){printf("error:그런 파일이 존재하지 않습니다.\n"); return;}
-	if(m->datablock[m->inodelist[inode].direct].d.files[0].name[0]!=0){
+	if(m->datablock[m->inodelist[file_inode].direct].d.files[0].name[0]!=0){
 		printf("error:폴더가 비어 있지 않습니다.\n");
 		return;
 	}
@@ -688,7 +695,6 @@ void call_myrm(struct linked_list * li,struct myfs*m,char command_option[6][15])
 			}
 			before_name--;
 		}
-
 		before_name++;
 		for(int i=0;i<4;i++){
 			if(len == before_name+i) break;
@@ -981,6 +987,8 @@ void call_mycp(struct linked_list * li,struct myfs* m,char command_option[6][15]
 
 	int flag_d_f=0; // files
 	int void_inode = allocation_file_inode(m,second_file_name,0,second_inode);
+	linked_init(li);
+	get_tree(li,*m,0);
 	int new_direct_block = m->inodelist[void_inode].direct = print_super_block(m); 
 	int c,new_double_block,new_single_block;
 	int b=0,db=0,size=0,new_block,sb=0,n=0;
@@ -1119,6 +1127,8 @@ void call_mycpfrom(struct linked_list * li,char command_option[6][15],struct myf
 	if(fc==NULL){printf("error:가져오려는 파일이 존재하지 않습니다.\n"); return;}
 	else{
 		int void_inode = allocation_file_inode(m,file_name,0,inode);
+		linked_init(li);
+		get_tree(li,*m,0);
 		int new_direct_block = m->inodelist[void_inode].direct = print_super_block(m); 
 		int c,new_double_block,new_single_block;
 		int b=0,db=0,size=0,new_block,sb=0,n=0;
@@ -1238,11 +1248,15 @@ void call_mymv(struct linked_list * li,char command_option[6][15], struct myfs* 
 	if(second_inode == -1){printf("error:새로 만들 파일  경로오류\n");return;}
 	if(second_file_inode != -1){printf("error:같은 이름이  존재합니다.\n");return;}
 
+	linked_init(li);
+	get_tree(li,*m,0);
 	apply_minus_size(li,m,first_file_inode);
 
 	rm_file_inode(m,first_file_name,first_inode);
 	second_file_inode = allocation_file(m,second_file_name,second_inode,first_file_inode);
 
+	linked_init(li);
+	get_tree(li,*m,0);
 	apply_plus_size(li,m,second_file_inode);
 }
 ///////////////////////////////////// call 함수 ///////////////////////////////////

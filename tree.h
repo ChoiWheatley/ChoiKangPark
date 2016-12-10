@@ -93,6 +93,7 @@ void linked_pop (struct linked_list * li,_Ty name) {
 	tmp = (struct linked_node *)malloc(sizeof(struct linked_node));
 	linked_find_node_by_name (li->head,name); // 순회하면서 이름을통해서 tmp가 삭제하려는거 node가 됌
 	tmp=save_node; // 이게 전역변수라서 체크를...........
+	save_node = li->head;
 	if(/*d_f &&*/ tmp->left_child != NULL_PTR) // 디렉 && 자식존재  // d_f를 아이노드접근해서 표현해야함
 	{
 		printf("%s is not empty\n",tmp->value);
@@ -185,6 +186,7 @@ bool linked_empty(struct linked_list * li) {
 
 void linked_find_node_by_inode (struct linked_node * node,int input_inode) {
 	if(node == NULL_PTR){
+		printf("null\n");
 		return ;
 	}
 
@@ -259,6 +261,7 @@ void get_tree (struct linked_list * li,struct myfs m,int now_dir_datablock) {
 				printf("\nsearch 가기전에 now_dir_inode : %d\n",now_dir_inode);
 				linked_find_node_by_inode(li->head,now_dir_inode); //우변을 이용하여 순회를 하여 맞는 구조체를 리턴하여 해야할듯
 				li->search_dir = save_node;
+				save_node = li->head;
 				printf("li->search_dir : %p,null :  %p\n",li->search_dir,NULL_PTR);
 				if(li->search_dir == NULL_PTR) // 만약 이게 true라면 get_tree함수가 위에서 틀린거임;
 				{
@@ -284,6 +287,7 @@ void get_tree (struct linked_list * li,struct myfs m,int now_dir_datablock) {
 		printf("\nsearch 가기전에 now_dir_inode : %d\n",now_dir_inode);
 		linked_find_node_by_inode(li->head,now_dir_inode); //우변을 이용하여 순회를 하여 맞는 구조체를 리턴하여 해야할듯
 		li->search_dir = save_node;
+		save_node = li->head;
 		printf("li->search_dir : %p,null :  %p\n",li->search_dir,NULL_PTR);
 		if(li->search_dir == NULL_PTR) // 만약 이게 true라면 get_tree함수가 위에서 틀린거임;
 		{
@@ -316,9 +320,11 @@ int size_plus(int add_size) {
 }
 
 void apply_plus_size (struct linked_list * li,struct myfs * m,int input_inode) {
+	printf("apply _ plus _ size 의 인자로들어온 inode %d\n",input_inode);
 	linked_find_node_by_inode(li->head,input_inode);
 	struct linked_node * now_node = (struct linked_node *)malloc(sizeof(struct linked_node));
 	now_node = save_node;
+	save_node = li->head;
 	printf("%s %d\n",now_node->value,now_node->inode);
 	int add_size = m->inodelist[now_node->inode].size; // 현재파일의 사이즈를가져온다
 	while(now_node->parent != NULL_PTR)
@@ -336,6 +342,7 @@ void apply_minus_size (struct linked_list * li,struct myfs * m,int input_inode) 
 	linked_find_node_by_inode(li->head,input_inode);
 	struct linked_node * now_node = (struct linked_node *)malloc(sizeof(struct linked_node));
 	now_node = save_node;
+	save_node = li->head;
 	printf("%s %d\n",now_node->value,now_node->inode);
 	int add_size = m->inodelist[now_node->inode].size; // 현재파일의 사이즈를가져온다
 	while(now_node->parent != NULL_PTR)
