@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include "struct_new.h" // 구조체
 #include <math.h>
+#include "tree.h"
 
 short top=1; // stack?
 short now[100]={1}; // 현재 디렉의 아이노드 번호
@@ -42,25 +43,26 @@ void call_mypwd(char command_option[6][15],struct myfs* m);
 void call_mystate(char command_option[6][15], struct myfs m);
 
 void call_myls(struct myfs* m,char command_option[6][15]);
-void call_mycat(struct myfs *m,char command_option[6][15]);
-void call_mytree(char command_option[6][15]);
+void call_mycat(struct linked_list * li,struct myfs *m,char command_option[6][15]);
+void call_mytree(char command_option[6][15],struct linked_list * li,struct myfs m);
 void call_mycd(char command_option[6][15], struct myfs *m);
 void call_mymkdir(char command_option[6][15],struct myfs * m);
 void call_myrmdir(struct myfs* m,char command_option[6][15]);
-void call_myrm(struct myfs* m,char command_option[6][15]);
+void call_myrm(struct linked_list * li,struct myfs* m,char command_option[6][15]);
 void call_mytouch(char command_option[6][15], struct myfs* m);
 void call_myshowinode(char command_option[6][15],struct myfs m);
 void call_myshowblock(char command_option[6][15],struct myfs m);
 
 void call_myshowfile(struct myfs* m,char command_option[6][15]);
-void call_mycp(struct myfs* m,char command_option[6][15]);
+void call_mycp(struct linked_list * li,struct myfs* m,char command_option[6][15]);
 void call_mycpto(struct myfs *m,char command_option[6][15]);
-void call_mycpfrom(char command_option[6][15],struct myfs* m);
-void call_mymv(char command_option[6][15], struct myfs* m);
+void call_mycpfrom(struct linked_list * li,char command_option[6][15],struct myfs* m);
+void call_mymv(struct linked_list * li,char command_option[6][15], struct myfs* m );
 ///////////////////////////////////// call 함수 ///////////////////////////////////
 int main(){
 	FILE* fp;
 	struct myfs m;
+	struct linked_list my_list;
 	fp = fopen("myfs.c","r");
 	if(fp==NULL){
 		printf("error : no myfs");
@@ -123,7 +125,7 @@ int main(){
 			if(strcmp(command_option[0],"myls")==0)
 				call_myls(&m,command_option);
 			else if(strcmp(command_option[0],"mycat")==0)
-				call_mycat(&m,command_option);
+				call_mycat(&my_list,&m,command_option);
 			else if(strcmp(command_option[0],"myshowfile")==0)
 				call_myshowfile(&m,command_option);
 			else if(strcmp(command_option[0],"mypwd")==0)
@@ -131,19 +133,19 @@ int main(){
 			else if(strcmp(command_option[0],"mycd")==0)
 				call_mycd(command_option, &m);
 			else if(strcmp(command_option[0],"mycp")==0)
-				call_mycp(&m,command_option);
+				call_mycp(&my_list,&m,command_option);
 			else if(strcmp(command_option[0],"mycpto")==0)
 				call_mycpto(&m,command_option);
 			else if(strcmp(command_option[0],"mycpfrom")==0)
-				call_mycpfrom(command_option,&m);
+				call_mycpfrom(&my_list,command_option,&m);
 			else if(strcmp(command_option[0],"mymkdir")==0)
 				call_mymkdir(command_option,&m);
 			else if(strcmp(command_option[0],"myrmdir")==0)
 				call_myrmdir(&m,command_option);
 			else if(strcmp(command_option[0],"myrm")==0)
-				call_myrm(&m,command_option);
+				call_myrm(&my_list,&m,command_option);
 			else if(strcmp(command_option[0],"mymv")==0)
-				call_mymv(command_option, &m);
+				call_mymv(&my_list,command_option, &m);
 			else if(strcmp(command_option[0],"mytouch")==0)
 				call_mytouch(command_option, &m);
 			else if(strcmp(command_option[0],"myshowinode")==0)
@@ -153,7 +155,26 @@ int main(){
 			else if(strcmp(command_option[0],"mystate")==0)
 				call_mystate(command_option, m);
 			else if(strcmp(command_option[0],"mytree")==0)
-				call_mytree(command_option);
+				call_mytree(command_option,&my_list,m);
+			//for test
+			else if(strcmp(command_option[0],"myapplypsize")==0)
+				apply_plus_size(&my_list,&m,16);
+			else if(strcmp(command_option[0],"myapplymsize")==0)
+				apply_minus_size(&my_list,&m,16);
+			else if(strcmp(command_option[0], "myprintinode")==0)
+				printf("%dth inode added.\n", print_super_inode(&m));
+			else if(strcmp(command_option[0], "myprintblock")==0)
+				printf("%dth block added.\n", print_super_block(&m));
+			else if(strcmp(command_option[0], "myrminode")==0)
+				printf("%dth inode deleted.\n", remove_super_inode(option_integer[1], &m));
+			else if(strcmp(command_option[0], "myrmblock")==0)
+				printf("%dth block deleted.\n", remove_super_block(option_integer[1], &m));
+//			else if (strcmp(command_option[0], "mymanyinode")==0)
+//				print_many_inode(option_integer[1], &m);
+//			else if (strcmp(command_option[0], "mymanyblock")==0)
+//				print_many_block(option_integer[1], &m);
+//			else if(strcmp(command_option[0],"myshowfiles")==0)
+//				show_files(&m);
 			printf("\n");
 			command_clear(command_option);
 			fp = fopen("myfs.c","w");
@@ -274,7 +295,7 @@ void call_myls(struct myfs* m,char command_option[6][15]) {
 	}
 }
 
-void call_mycat(struct myfs *m,char command_option[6][15]) {
+void call_mycat(struct linked_list * li,struct myfs *m,char command_option[6][15]) {
 	if(command_option[2][0]==0){
 		int inode;
 		char file_name[4]={0};
@@ -340,7 +361,7 @@ void call_mycat(struct myfs *m,char command_option[6][15]) {
 
 
 		if(find_file_inode(m,target_name,now[top-1])!=-1)
-			call_myrm(m,command_option);
+			call_myrm(li,m,command_option);
 		block_list bl={0};
 
 		for(int i=0;i<3;i++){
@@ -396,8 +417,63 @@ void call_mycat(struct myfs *m,char command_option[6][15]) {
 
 
 }
-void call_mytree(char command_option[6][15]) {
-	printf("mytree");
+
+void call_mytree(char command_option[6][15],struct linked_list * li,struct myfs m) {
+
+	linked_init(li);
+	get_tree(li,m,0);
+	printf("\n");
+	printf("option : %s\n",command_option[1]);
+
+	if(command_option[1][0] != '\0')
+	{
+		int len = strlen(command_option[1]);
+		//real
+		int i=0,j=0;
+		int count = 0;
+		int check = 0;
+
+		while(command_option[1][i] != '\0')
+		{
+			count++;
+			if(command_option[1][i] == '/')
+			{
+				count=0;
+				check = i;
+				check++;
+			}
+			i++;
+		}
+		printf("count : %d\n",count);
+
+		char path[count+1];
+		while(j<count)
+		{
+			path[j]=command_option[1][check];
+			j++;
+			check++;
+		}
+		path[j]='\0';
+		printf("path : %s\n",path);
+
+		linked_find_node_by_name(li->head,path); // save_node;
+		//command_option의 상대경로든 절대경로든  마지막 디렉만남기는 함수
+		printf("path : %s\n",save_node->value);
+		if(m.inodelist[save_node->inode].d_f && strcmp(path,save_node->value)==0)
+		{
+			linked_print_tree_for_test(save_node);
+			printf("\n");
+			linked_print_tree(save_node,0);
+		}
+		else
+			printf("잘못된 경로입니다\n");
+	}
+	else
+	{
+		linked_print_tree_for_test(li->head);
+		printf("\n");
+		linked_print_tree(li->head,0);
+	}
 }
 void call_mycd(char command_option[6][15], struct myfs* m) {
 	char c=0;
@@ -578,7 +654,7 @@ void call_myrmdir(struct myfs* m,char command_option[6][15]) {
 	}
 	file_inode = find_file_inode(m,file_name,inode);
 	if(file_inode==-1){printf("error:그런 파일이 존재하지 않습니다.\n"); return;}
-	if(m->inodelist[inode].size){
+	if(m->datablock[m->inodelist[inode].direct].d.files[0].name[0]!=0){
 		printf("error:폴더가 비어 있지 않습니다.\n");
 		return;
 	}
@@ -591,7 +667,7 @@ void call_myrmdir(struct myfs* m,char command_option[6][15]) {
 	rm_file_inode(m,file_name,inode);
 }
 
-void call_myrm(struct myfs*m,char command_option[6][15]){
+void call_myrm(struct linked_list * li,struct myfs*m,char command_option[6][15]){
 	int inode;
 	char file_name[4]={0};
 	int file_inode;
@@ -628,6 +704,8 @@ void call_myrm(struct myfs*m,char command_option[6][15]){
 	if(file_inode==-1){printf("error:그런 파일이 존재하지 않습니다.\n"); return;}
 
 	rm_file_inode(m,file_name,inode);
+
+	apply_minus_size(li,m,file_inode);
 
 	block_list b={0};
 	block_linked(m,&b,file_inode);
@@ -673,7 +751,6 @@ void call_myrm(struct myfs*m,char command_option[6][15]){
 
 	clear_inode(m,file_inode);
 	remove_super_inode(file_inode,m);
-
 }
 
 void call_mytouch(char command_option[6][15], struct myfs* m) {
@@ -827,7 +904,7 @@ void call_myshowfile(struct myfs* m,char command_option[6][15]) {
 		n++;
 	}
 }
-void call_mycp(struct myfs* m,char command_option[6][15]) {
+void call_mycp(struct linked_list * li,struct myfs* m,char command_option[6][15]) {
 	int first_inode;
 	char first_file_name[4]={0};
 	int first_file_inode;
@@ -948,6 +1025,8 @@ void call_mycp(struct myfs* m,char command_option[6][15]) {
 		}
 	}
 	m->inodelist[void_inode].size=m->inodelist[first_file_inode].size;
+
+	apply_plus_size(li,m,void_inode);
 	/*for (int j = top-1; j >= 0; j--){
 	  m->inodelist[now[j]].size += m->inodelist[inode].size;
 	  }*/
@@ -1001,10 +1080,9 @@ void call_mycpto(struct myfs *m,char command_option[6][15]) {
 
 }
 
-void call_mycpfrom(char command_option[6][15],struct myfs* m) {
+void call_mycpfrom(struct linked_list * li,char command_option[6][15],struct myfs* m) {
 	int inode;
 	char file_name[4]={0};
-	int i = 0;
 	int file_inode;
 	int flag=0;
 	int before_name = strlen(command_option[2]),len = strlen(command_option[2]);
@@ -1080,15 +1158,15 @@ void call_mycpfrom(char command_option[6][15],struct myfs* m) {
 			if(sb==102&&db==102)break; //single이랑 double 다 차면 끝
 		}
 		m->inodelist[void_inode].size=size;
-		for (int j = top-1; j >= 0; j--){
-			m->inodelist[now[j]].size += size;
-		}
+		printf("size 전 inode ? :%d\n",void_inode);
+		apply_plus_size(li,m,void_inode);
 	}
 	fclose(fc);
+
 }
 
 
-void call_mymv(char command_option[6][15], struct myfs* m ) {
+void call_mymv(struct linked_list * li,char command_option[6][15], struct myfs* m ) {
 	int first_inode;
 	char first_file_name[4]={0};
 	int first_file_inode;
@@ -1160,8 +1238,12 @@ void call_mymv(char command_option[6][15], struct myfs* m ) {
 	if(second_inode == -1){printf("error:새로 만들 파일  경로오류\n");return;}
 	if(second_file_inode != -1){printf("error:같은 이름이  존재합니다.\n");return;}
 
+	apply_minus_size(li,m,first_file_inode);
+
 	rm_file_inode(m,first_file_name,first_inode);
-	allocation_file(m,second_file_name,second_inode,first_file_inode);
+	second_file_inode = allocation_file(m,second_file_name,second_inode,first_file_inode);
+
+	apply_plus_size(li,m,second_file_inode);
 }
 ///////////////////////////////////// call 함수 ///////////////////////////////////
 struct time_now now_time (void) {
