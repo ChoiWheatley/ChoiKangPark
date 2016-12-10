@@ -275,55 +275,55 @@ void call_myls(struct myfs* m,char command_option[6][15]) {
 }
 
 void call_mycat(struct myfs *m,char command_option[6][15]) {
-	   if(command_option[2][0]==0){
-	int inode;
-	char file_name[4]={0};
-	int file_inode;
-	int flag=0;
-	int before_name = strlen(command_option[1]),len = strlen(command_option[1]);
-	for(int i=0;i<len;i++){
-		if(command_option[1][i]=='/'){
-			flag=1;
-			break;
-		}
-	}
-	if(flag==1){
-		inode = path_to_inode_make(m,command_option[1]);
-		if(inode==-1)return;
-		for(int i=before_name;i>=0;i--){
+	if(command_option[2][0]==0){
+		int inode;
+		char file_name[4]={0};
+		int file_inode;
+		int flag=0;
+		int before_name = strlen(command_option[1]),len = strlen(command_option[1]);
+		for(int i=0;i<len;i++){
 			if(command_option[1][i]=='/'){
+				flag=1;
 				break;
 			}
-			before_name--;
 		}
+		if(flag==1){
+			inode = path_to_inode_make(m,command_option[1]);
+			if(inode==-1)return;
+			for(int i=before_name;i>=0;i--){
+				if(command_option[1][i]=='/'){
+					break;
+				}
+				before_name--;
+			}
 
-		before_name++;
-		for(int i=0;i<4;i++){
-			if(len == before_name+i) break;
-			file_name[i] = command_option[1][before_name+i];
-		} 
+			before_name++;
+			for(int i=0;i<4;i++){
+				if(len == before_name+i) break;
+				file_name[i] = command_option[1][before_name+i];
+			} 
+		}
+		//만들려고 하는 파일 이름을 맨 끝에서 가져옴 
+		else{
+			strncpy (file_name, command_option[1], 4);
+			inode = now[top-1];
+		}
+		file_inode = find_file_inode(m,file_name,inode);
+		if(file_inode==-1){printf("error:파일이 존재하지 않습니다.\n");return;}
+		block_list b={0};
+		block_linked(m,&b,file_inode);
+		for(block* i = b.front;i!=NULL;i = i->next){
+			for(int j=0;j<128;j++)
+				printf("%c",m->datablock[i->num].dr.block[j]);
+		}
 	}
-	//만들려고 하는 파일 이름을 맨 끝에서 가져옴 
-	else{
-		strncpy (file_name, command_option[1], 4);
-		inode = now[top-1];
-	}
-	file_inode = find_file_inode(m,file_name,inode);
-	   if(file_inode==-1){printf("error:파일이 존재하지 않습니다.\n");return;}
-	   block_list b={0};
-	   block_linked(m,&b,file_inode);
-	   for(block* i = b.front;i!=NULL;i = i->next){
-	   for(int j=0;j<128;j++)
-	   printf("%c",m->datablock[i->num].dr.block[j]);
-	   }
-	   }
 	else{
 		char target_name[4]={0};
 		int file_inode[3]={0};
 		int idx=0;
 		int file_size=0;
 		for(int i=1;i<6;i++){
-		char tmp_name[4]={0};
+			char tmp_name[4]={0};
 			if(command_option[i][0]=='>'){
 				strncpy(target_name,command_option[i+1],4);
 				break;
@@ -341,57 +341,57 @@ void call_mycat(struct myfs *m,char command_option[6][15]) {
 
 		if(find_file_inode(m,target_name,now[top-1])!=-1)
 			call_myrm(m,command_option);
-	   block_list bl={0};
+		block_list bl={0};
 
-	   for(int i=0;i<3;i++){
-		   if(file_inode[i]==0) break;
-	   block_linked(m,&bl,file_inode[i]);
-	   }
+		for(int i=0;i<3;i++){
+			if(file_inode[i]==0) break;
+			block_linked(m,&bl,file_inode[i]);
+		}
 
-	   int flag_d_f=0; // files
-	   int void_inode = allocation_file_inode(m,target_name,0,now[top-1]);
-	   int new_direct_block = m->inodelist[void_inode].direct = print_super_block(m); 
-	   int c,new_double_block,new_single_block;
-	   int b=0,db=0,size=0,new_block,sb=0,n=0;
-	   int o=0,v=0;
-	   for(block* i = bl.front;i!=NULL;i = i->next){
-	   for(int z=0;z<128;z++){
-	   m->datablock[new_direct_block].dr.block[b]=m->datablock[i->num].dr.block[z];
-	   b++; //다이렉트 블록의 크기 체크
-	   size++;//파일 크기 체크
-	   if(file_size==size) break;
-	   if(b==128){
-	   if(db==102){ //싱글 꽉 찼을 때
-	   if(sb==0) //더블 첫 할당
-	   new_double_block = m->inodelist[void_inode].double_indirect = print_super_block(m);
-	   new_single_block = print_super_block(m);
-	   if(new_double_block==-1||new_single_block==-1)break;
-	   n=0;//이전 싱글 정보 초기화
-	   for(int r=0;r<10;r++){
-	   if((new_single_block>>r&1)==1)
-	   m->datablock[new_double_block].si.block[v/32].n += pow(2,v%32);
-	   v++;   //double에 10비트 할당
-	   }
+		int flag_d_f=0; // files
+		int void_inode = allocation_file_inode(m,target_name,0,now[top-1]);
+		int new_direct_block = m->inodelist[void_inode].direct = print_super_block(m); 
+		int c,new_double_block,new_single_block;
+		int b=0,db=0,size=0,new_block,sb=0,n=0;
+		int o=0,v=0;
+		for(block* i = bl.front;i!=NULL;i = i->next){
+			for(int z=0;z<128;z++){
+				m->datablock[new_direct_block].dr.block[b]=m->datablock[i->num].dr.block[z];
+				b++; //다이렉트 블록의 크기 체크
+				size++;//파일 크기 체크
+				if(file_size==size) break;
+				if(b==128){
+					if(db==102){ //싱글 꽉 찼을 때
+						if(sb==0) //더블 첫 할당
+							new_double_block = m->inodelist[void_inode].double_indirect = print_super_block(m);
+						new_single_block = print_super_block(m);
+						if(new_double_block==-1||new_single_block==-1)break;
+						n=0;//이전 싱글 정보 초기화
+						for(int r=0;r<10;r++){
+							if((new_single_block>>r&1)==1)
+								m->datablock[new_double_block].si.block[v/32].n += pow(2,v%32);
+							v++;   //double에 10비트 할당
+						}
 
-	   db=0; 
-	   sb++;//싱글 크기 증가
-	   }
-	   if(db==0&&sb==0)
-	   new_single_block = m->inodelist[void_inode].single_indirect = print_super_block(m);
-	   new_direct_block = print_super_block(m);
-	   if(new_direct_block==-1||new_single_block==-1)break;
-	   for(int i=0;i<10;i++){
-	   if((new_direct_block>>i&1)==1)
-	   m->datablock[new_single_block].si.block[n/32].n += pow(2,n%32);
-	   n++;   //single에 10비트 할당
-	   }
-	   db++;//10비트 한번 넣을때마다 하나씩 올라감
-	   b=0;
-	   }
-	   if(sb==102&&db==102)break; //single이랑 double 다 차면 끝
-	   }
-	   }
-	   m->inodelist[void_inode].size=size;
+						db=0; 
+						sb++;//싱글 크기 증가
+					}
+					if(db==0&&sb==0)
+						new_single_block = m->inodelist[void_inode].single_indirect = print_super_block(m);
+					new_direct_block = print_super_block(m);
+					if(new_direct_block==-1||new_single_block==-1)break;
+					for(int i=0;i<10;i++){
+						if((new_direct_block>>i&1)==1)
+							m->datablock[new_single_block].si.block[n/32].n += pow(2,n%32);
+						n++;   //single에 10비트 할당
+					}
+					db++;//10비트 한번 넣을때마다 하나씩 올라감
+					b=0;
+				}
+				if(sb==102&&db==102)break; //single이랑 double 다 차면 끝
+			}
+		}
+		m->inodelist[void_inode].size=size;
 	}
 
 
@@ -577,18 +577,18 @@ void call_myrmdir(struct myfs* m,char command_option[6][15]) {
 		inode = now[top-1];
 	}
 	file_inode = find_file_inode(m,file_name,inode);
-	   if(file_inode==-1){printf("error:그런 파일이 존재하지 않습니다.\n"); return;}
-	   if(m->inodelist[inode].size){
-	   printf("error:폴더가 비어 있지 않습니다.\n");
-	   return;
-	   }
-	   if(m->inodelist[inode].d_f==0){
-	   printf("error:폴더가 아닙니다.\n");
-	   return;
-	   }
-	   remove_super_block(m->inodelist[inode].direct,m);
-	   clear_inode(m,file_inode);
-	   rm_file_inode(m,file_name,inode);
+	if(file_inode==-1){printf("error:그런 파일이 존재하지 않습니다.\n"); return;}
+	if(m->inodelist[inode].size){
+		printf("error:폴더가 비어 있지 않습니다.\n");
+		return;
+	}
+	if(m->inodelist[inode].d_f==0){
+		printf("error:폴더가 아닙니다.\n");
+		return;
+	}
+	remove_super_block(m->inodelist[inode].direct,m);
+	clear_inode(m,file_inode);
+	rm_file_inode(m,file_name,inode);
 }
 
 void call_myrm(struct myfs*m,char command_option[6][15]){
@@ -625,50 +625,50 @@ void call_myrm(struct myfs*m,char command_option[6][15]){
 		inode = now[top-1];
 	}
 	file_inode = find_file_inode(m,file_name,inode);
-	   if(file_inode==-1){printf("error:그런 파일이 존재하지 않습니다.\n"); return;}
+	if(file_inode==-1){printf("error:그런 파일이 존재하지 않습니다.\n"); return;}
 
-	   rm_file_inode(m,file_name,inode);
+	rm_file_inode(m,file_name,inode);
 
-	   block_list b={0};
-	   block_linked(m,&b,file_inode);
+	block_list b={0};
+	block_linked(m,&b,file_inode);
 
-	   for(block* i = b.front;i!=NULL;i = i->next){
-	   remove_super_block(i->num,m);
-	   for(int j=0;j<128;j++){
-	   m->datablock[i->num].dr.block[j] = 0;
-	   }
-	   } //direct블록들 데이터블록과 슈퍼블록 초기화
+	for(block* i = b.front;i!=NULL;i = i->next){
+		remove_super_block(i->num,m);
+		for(int j=0;j<128;j++){
+			m->datablock[i->num].dr.block[j] = 0;
+		}
+	} //direct블록들 데이터블록과 슈퍼블록 초기화
 
-	   if(m->inodelist[file_inode].single_indirect){
-	   remove_super_block(m->inodelist[file_inode].single_indirect,m);
+	if(m->inodelist[file_inode].single_indirect){
+		remove_super_block(m->inodelist[file_inode].single_indirect,m);
 
 
-	   for(int i=0;i<32;i++)
-	   m->datablock[m->inodelist[file_inode].single_indirect].si.block[i].n &= 0x0000;
+		for(int i=0;i<32;i++)
+			m->datablock[m->inodelist[file_inode].single_indirect].si.block[i].n &= 0x0000;
 
-	   } //single 블록들 초기화
-	   if(m->inodelist[file_inode].double_indirect){
-	   remove_super_block(m->inodelist[file_inode].double_indirect,m);// inodelist에 있는 블록들 슈퍼블록 초기화
-	   int sn=0,s_num=0;
-	   for(int j=0;j<102;j++){
-	   for(int i=0;i<10;i++){
-	   if((m->datablock[m->inodelist[file_inode].double_indirect].si.block[sn/32].n>>(sn%32)&1)==1)
-	   s_num += pow(2,i);
-	   sn++;
-	   } //double블록에서 single 번호 읽어오기
-	   if(s_num==0)break;
-	   for(int k=0;k<32;k++)
-	   m->datablock[s_num].si.block[k].n &= 0x0000;
-	   remove_super_block(s_num,m);
-	   s_num=0;
-	   } 
-	   for(int i=0;i<32;i++)
-	   m->datablock[m->inodelist[file_inode].double_indirect].si.block[i].n &= 0x0000;
+	} //single 블록들 초기화
+	if(m->inodelist[file_inode].double_indirect){
+		remove_super_block(m->inodelist[file_inode].double_indirect,m);// inodelist에 있는 블록들 슈퍼블록 초기화
+		int sn=0,s_num=0;
+		for(int j=0;j<102;j++){
+			for(int i=0;i<10;i++){
+				if((m->datablock[m->inodelist[file_inode].double_indirect].si.block[sn/32].n>>(sn%32)&1)==1)
+					s_num += pow(2,i);
+				sn++;
+			} //double블록에서 single 번호 읽어오기
+			if(s_num==0)break;
+			for(int k=0;k<32;k++)
+				m->datablock[s_num].si.block[k].n &= 0x0000;
+			remove_super_block(s_num,m);
+			s_num=0;
+		} 
+		for(int i=0;i<32;i++)
+			m->datablock[m->inodelist[file_inode].double_indirect].si.block[i].n &= 0x0000;
 
-	   } //double 블록을 초기화
-	   m->inodelist[file_inode].direct=0;
-	   m->inodelist[file_inode].single_indirect=0;
-	   m->inodelist[file_inode].double_indirect=0;
+	} //double 블록을 초기화
+	m->inodelist[file_inode].direct=0;
+	m->inodelist[file_inode].single_indirect=0;
+	m->inodelist[file_inode].double_indirect=0;
 	//inode 초기화
 
 	clear_inode(m,file_inode);
@@ -744,7 +744,7 @@ void call_myshowinode(char command_option[6][15], struct myfs m) {
 		printf("data block list : ");
 		for(block* i = b.front;i!=NULL;i = i->next)
 			printf("%d,",i->num);
-			
+
 		printf("\n");
 	}
 }
@@ -899,58 +899,58 @@ void call_mycp(struct myfs* m,char command_option[6][15]) {
 	if(second_inode == -1){printf("error:새로 만들 파일  경로오류\n");return;}
 	if(second_file_inode != -1){printf("error:파일이 존재합니다.\n");return;}
 
-	   block_list bl={0};
-	   block_linked(m,&bl,first_file_inode);
+	block_list bl={0};
+	block_linked(m,&bl,first_file_inode);
 
-	   int flag_d_f=0; // files
-	   int void_inode = allocation_file_inode(m,second_file_name,0,second_inode);
-	   int new_direct_block = m->inodelist[void_inode].direct = print_super_block(m); 
-	   int c,new_double_block,new_single_block;
-	   int b=0,db=0,size=0,new_block,sb=0,n=0;
-	   int file_size=m->inodelist[first_file_inode].size;
-	   int o=0,v=0;
-	   for(block* i = bl.front;i!=NULL;i = i->next){
-	   for(int z=0;z<128;z++){
-	   if(m->datablock[i->num].dr.block[b]==0) break;
-	   m->datablock[new_direct_block].dr.block[b]=m->datablock[i->num].dr.block[z];
-	   b++; //다이렉트 블록의 크기 체크
-	   size++;//파일 크기 체크
-	   if(file_size==size) break;
-	   if(b==128){
-	   if(db==102){ //싱글 꽉 찼을 때
-	   if(sb==0) //더블 첫 할당
-	   new_double_block = m->inodelist[void_inode].double_indirect = print_super_block(m);
-	   new_single_block = print_super_block(m);
-	   if(new_double_block==-1||new_single_block==-1)break;
-	   n=0;//이전 싱글 정보 초기화
-	   for(int r=0;r<10;r++){
-	   if((new_single_block>>r&1)==1)
-	   m->datablock[new_double_block].si.block[v/32].n += pow(2,v%32);
-	   v++;   //double에 10비트 할당
-	   }
+	int flag_d_f=0; // files
+	int void_inode = allocation_file_inode(m,second_file_name,0,second_inode);
+	int new_direct_block = m->inodelist[void_inode].direct = print_super_block(m); 
+	int c,new_double_block,new_single_block;
+	int b=0,db=0,size=0,new_block,sb=0,n=0;
+	int file_size=m->inodelist[first_file_inode].size;
+	int o=0,v=0;
+	for(block* i = bl.front;i!=NULL;i = i->next){
+		for(int z=0;z<128;z++){
+			if(m->datablock[i->num].dr.block[b]==0) break;
+			m->datablock[new_direct_block].dr.block[b]=m->datablock[i->num].dr.block[z];
+			b++; //다이렉트 블록의 크기 체크
+			size++;//파일 크기 체크
+			if(file_size==size) break;
+			if(b==128){
+				if(db==102){ //싱글 꽉 찼을 때
+					if(sb==0) //더블 첫 할당
+						new_double_block = m->inodelist[void_inode].double_indirect = print_super_block(m);
+					new_single_block = print_super_block(m);
+					if(new_double_block==-1||new_single_block==-1)break;
+					n=0;//이전 싱글 정보 초기화
+					for(int r=0;r<10;r++){
+						if((new_single_block>>r&1)==1)
+							m->datablock[new_double_block].si.block[v/32].n += pow(2,v%32);
+						v++;   //double에 10비트 할당
+					}
 
-	   db=0; 
-	   sb++;//싱글 크기 증가
-	   }
-	   if(db==0&&sb==0)
-	   new_single_block = m->inodelist[void_inode].single_indirect = print_super_block(m);
-	   new_direct_block = print_super_block(m);
-	   if(new_direct_block==-1||new_single_block==-1)break;
-	   for(int i=0;i<10;i++){
-	   if((new_direct_block>>i&1)==1)
-	   m->datablock[new_single_block].si.block[n/32].n += pow(2,n%32);
-	   n++;   //single에 10비트 할당
-	   }
-	   db++;//10비트 한번 넣을때마다 하나씩 올라감
-	   b=0;
-	   }
-	   if(sb==102&&db==102)break; //single이랑 double 다 차면 끝
-	   }
-	   }
-	   m->inodelist[void_inode].size=m->inodelist[first_file_inode].size;
-	   /*for (int j = top-1; j >= 0; j--){
-	   m->inodelist[now[j]].size += m->inodelist[inode].size;
-	   }*/
+					db=0; 
+					sb++;//싱글 크기 증가
+				}
+				if(db==0&&sb==0)
+					new_single_block = m->inodelist[void_inode].single_indirect = print_super_block(m);
+				new_direct_block = print_super_block(m);
+				if(new_direct_block==-1||new_single_block==-1)break;
+				for(int i=0;i<10;i++){
+					if((new_direct_block>>i&1)==1)
+						m->datablock[new_single_block].si.block[n/32].n += pow(2,n%32);
+					n++;   //single에 10비트 할당
+				}
+				db++;//10비트 한번 넣을때마다 하나씩 올라감
+				b=0;
+			}
+			if(sb==102&&db==102)break; //single이랑 double 다 차면 끝
+		}
+	}
+	m->inodelist[void_inode].size=m->inodelist[first_file_inode].size;
+	/*for (int j = top-1; j >= 0; j--){
+	  m->inodelist[now[j]].size += m->inodelist[inode].size;
+	  }*/
 }
 void call_mycpto(struct myfs *m,char command_option[6][15]) {
 	int inode;
@@ -988,16 +988,16 @@ void call_mycpto(struct myfs *m,char command_option[6][15]) {
 	}
 	file_inode = find_file_inode(m,file_name,inode);
 	if(inode == -1){printf("error:경로오류\n");return;}
-	   block_list b={0};
-	   if(file_inode==-1){printf("error:파일이 존재하지 않습니다.\n");return;}
-	   block_linked(m,&b,file_inode);
-	   char new_name[5]={0};
-	   strncpy(new_name,command_option[2],4);
-	   FILE* fp = fopen(new_name,"w");
-	   for(block* i = b.front;i!=NULL;i = i->next)
-	   for(int j=0;j<128;j++)
-	   fprintf(fp,"%c",m->datablock[i->num].dr.block[j]);
-	   fclose(fp);
+	block_list b={0};
+	if(file_inode==-1){printf("error:파일이 존재하지 않습니다.\n");return;}
+	block_linked(m,&b,file_inode);
+	char new_name[5]={0};
+	strncpy(new_name,command_option[2],4);
+	FILE* fp = fopen(new_name,"w");
+	for(block* i = b.front;i!=NULL;i = i->next)
+		for(int j=0;j<128;j++)
+			fprintf(fp,"%c",m->datablock[i->num].dr.block[j]);
+	fclose(fp);
 
 }
 
@@ -1160,8 +1160,8 @@ void call_mymv(char command_option[6][15], struct myfs* m ) {
 	if(second_inode == -1){printf("error:새로 만들 파일  경로오류\n");return;}
 	if(second_file_inode != -1){printf("error:같은 이름이  존재합니다.\n");return;}
 
-		rm_file_inode(m,first_file_name,first_inode);
-		allocation_file(m,second_file_name,second_inode,first_file_inode);
+	rm_file_inode(m,first_file_name,first_inode);
+	allocation_file(m,second_file_name,second_inode,first_file_inode);
 }
 ///////////////////////////////////// call 함수 ///////////////////////////////////
 struct time_now now_time (void) {
@@ -1561,7 +1561,7 @@ void block_linked(struct myfs *m,block_list *b,int inode){
 				}
 				n++; 
 			}
-				if(l==0)break;
+			if(l==0)break;
 			push(b,l);
 			bcnt++;
 			l=0;
