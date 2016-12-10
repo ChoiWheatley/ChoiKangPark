@@ -7,8 +7,8 @@
 #include <math.h>
 #include "tree.h"
 
-short top=1; // stack?
-short now[100]={1}; // 현재 디렉의 아이노드 번호
+short top=1; // stack
+short now[100]={1}; // 현재 디렉의 아이노드 번호를 스택으로 쌓아놓음
 
 struct time_now now_time (void); // 현재시간을 리턴
 struct time_now clear_time(void);
@@ -233,25 +233,27 @@ void call_myls(struct myfs* m,char command_option[6][15]) {
 	else strcpy(name_or_path,command_option[1]);
 
 	if(command_option[2][0]!=0) strcpy(name_or_path,command_option[2]);
+	//옵션과 경로를 option,name_or_path에 할당한다.
+
 	int len = strlen(name_or_path);
 	int flag=0;
-	for(int i=0;i<len;i++){
+	for(int i=0;i<len;i++){        //경로인지 현재 디렉토리의 파일 이름인지 확인
 		if(name_or_path[i]=='/'){
 			flag=1;
 			break;
 		}
 	}
 	int inode;
-	if(name_or_path[0]==0)
+	if(name_or_path[0]==0)         //경로관련 인자가 없을 경우
 		inode = now[top-1];
-	else if(flag == 0){
+	else if(flag == 0){           //현재 디렉토리의 파일 이름일 경우
 		char name[4]={0};
 		strncpy(name,name_or_path,4);
 		inode = find_file_inode(m,name_or_path,now[top-1]);
 	}
 
-	else 
-		inode = path_to_inode(name_or_path,m); 	
+	else                 //경로인 경우
+		inode = path_to_inode(name_or_path,m); 	//path_to_inode 마지막에 있는 목적 디렉토리의 아이노드 번호 리턴
 	if(inode == -1){printf("error\n");return;}
 	struct file e[510]={0};
 	int cnt=0;
@@ -331,8 +333,10 @@ void call_mycat(struct linked_list * li,struct myfs *m,char command_option[6][15
 		}
 		file_inode = find_file_inode(m,file_name,inode);
 		if(file_inode==-1){printf("error:파일이 존재하지 않습니다.\n");return;}
+		//file_inode에는 파일의 아이노드를, inode에는 그 파일이 있는 디렉토리의 아이노드를 줌
+		
 		block_list b={0};
-		block_linked(m,&b,file_inode);
+		block_linked(m,&b,file_inode);      //블록 링크드로 진짜 내용이 있는 블록들만 연결
 		for(block* i = b.front;i!=NULL;i = i->next){
 			for(int j=0;j<128;j++)
 				printf("%c",m->datablock[i->num].dr.block[j]);
@@ -354,6 +358,7 @@ void call_mycat(struct linked_list * li,struct myfs *m,char command_option[6][15
 			if(file_inode[i-1] == -1){printf("error\n");return;}
 			file_size += m->inodelist[file_inode[i-1]].size;
 		}
+		//꺽쇠 전까지의 파일들의 아이노드를 저장,꺽쇠 다음의 목적 파일의 이름은 target_name으로 저장
 
 		char erase_name[16]={0};
 		strcpy(command_option[1],erase_name);
@@ -364,6 +369,7 @@ void call_mycat(struct linked_list * li,struct myfs *m,char command_option[6][15
 			linked_init(li);
 			get_tree(li,*m,0);
 			apply_minus_size(li,m,find_file_inode(m,target_name,now[top-1]));
+		if(find_file_inode(m,target_name,now[top-1])!=-1)  //목적파일이 존재할 경우 삭제
 			call_myrm(li,m,command_option);
 		}
 		block_list bl={0};
@@ -372,6 +378,7 @@ void call_mycat(struct linked_list * li,struct myfs *m,char command_option[6][15
 			if(file_inode[i]==0) break;
 			block_linked(m,&bl,file_inode[i]);
 		}
+		//목적 파일 이전의 파일들은 진짜 내용이 있는 블럭들만 링크드로 연결
 
 		int flag_d_f=0; // files
 		int void_inode = allocation_file_inode(m,target_name,0,now[top-1]);
@@ -489,10 +496,10 @@ void call_mycd(char command_option[6][15], struct myfs* m) {
 	int idx=1;
 	char erase_name[4]={0};
 	short dir_inode;
-	if(command_option[1][0]=='/'){
+	if(command_option[1][0]=='/'){       // 절대경로일 경우
 		while(1){
 			char dir_name[4] = {0};
-			while(c = command_option[1][idx++]){
+			while(c = command_option[1][idx++]){         // '/'를 경계로 이름을 하나씩 dir_name에 저장
 				if(c=='/'||idx==len+1) break;
 				dir_name[idx_name++]=c;
 			}
@@ -515,9 +522,12 @@ void call_mycd(char command_option[6][15], struct myfs* m) {
 				now_tmp[top_tmp] = dir_inode;
 				top_tmp++;
 			}
+			// now_tmp라는 임시 스택에 now처럼 현재 디렉토리를 저장해감
+			
 			idx_name=0; 
 			if(idx==len+1)break;
 		}
+		//now_tmp에서 다 이동한 후 now에 복사
 		top=1; top_tmp=1; 
 		while(1){
 			if(now_tmp[top_tmp]==0){top=1;break;}
@@ -529,7 +539,7 @@ void call_mycd(char command_option[6][15], struct myfs* m) {
 		}
 	}
 
-	else{
+	else{                           //상대경로일 경우
 		idx=0;top=1;top_tmp=1;
 		while(1){
 			if(now[top]==0)break;
@@ -624,7 +634,7 @@ void call_mymkdir(char command_option[6][15],struct myfs * m) {
 	m->datablock[void_block].d.prev.name[0] = '.';
 	m->datablock[void_block].d.prev.name[1] = '.';
 	m->datablock[void_block].d.now.inode = void_inode;
-	m->datablock[void_block].d.prev.inode = now[top-1];
+	m->datablock[void_block].d.prev.inode = inode;
 }
 void call_myrmdir(struct myfs* m,char command_option[6][15]) {
 	int inode;
@@ -730,7 +740,7 @@ void call_myrm(struct linked_list * li,struct myfs*m,char command_option[6][15])
 		for(int i=0;i<32;i++)
 			m->datablock[m->inodelist[file_inode].single_indirect].si.block[i].n &= 0x0000;
 
-	} //single 블록들 초기화
+	} //single 관련 블록들 초기화
 	if(m->inodelist[file_inode].double_indirect){
 		remove_super_block(m->inodelist[file_inode].double_indirect,m);// inodelist에 있는 블록들 슈퍼블록 초기화
 		int sn=0,s_num=0;
@@ -749,7 +759,7 @@ void call_myrm(struct linked_list * li,struct myfs*m,char command_option[6][15])
 		for(int i=0;i<32;i++)
 			m->datablock[m->inodelist[file_inode].double_indirect].si.block[i].n &= 0x0000;
 
-	} //double 블록을 초기화
+	} //double 관련 블록을 초기화
 	m->inodelist[file_inode].direct=0;
 	m->inodelist[file_inode].single_indirect=0;
 	m->inodelist[file_inode].double_indirect=0;
@@ -938,6 +948,7 @@ void call_mycp(struct linked_list * li,struct myfs* m,char command_option[6][15]
 		} 
 	}
 	//만들려고 하는 파일 이름을 맨 끝에서 가져옴 
+	//first_inode에는 첫번째 인자 파일이 있는 디렉토리의 아이노드를, first_file_inode에는 첫번째 인자 파일의 아이노드를 저장
 	else{
 		strncpy (first_file_name, command_option[1], 4);
 		first_inode = now[top-1];
@@ -1245,6 +1256,7 @@ void call_mymv(struct linked_list * li,char command_option[6][15], struct myfs* 
 		second_inode = now[top-1];
 	}
 	second_file_inode = find_file_inode(m,second_file_name,second_inode);
+
 	if(second_inode == -1){printf("error:새로 만들 파일  경로오류\n");return;}
 	if(second_file_inode != -1){printf("error:같은 이름이  존재합니다.\n");return;}
 
@@ -1331,7 +1343,7 @@ int remove_super_block (unsigned int block_number, struct myfs* m){
 	}
 }
 
-int allocation_file_inode (struct myfs * m,char name[4],int flag_d_f,int inode) { // file이름 받아 indoe할당받고 저장, file이름도
+int allocation_file_inode (struct myfs * m,char name[4],int flag_d_f,int inode) { // file이름 받아 inode할당받고 저장, file이름도
 	int now_where = inode;
 	int check = find_file_inode(m,name,inode); // check는 이미있는 파일의 아이노드값
 	int new_direct,l=0,o=0;
@@ -1401,7 +1413,7 @@ int allocation_file_inode (struct myfs * m,char name[4],int flag_d_f,int inode) 
 	}
 	return 0;
 }
-int allocation_file (struct myfs * m,char name[4],int inode,int file_inode) { // file이름 받아 indoe할당받고 저장, file이름도
+int allocation_file (struct myfs * m,char name[4],int inode,int file_inode) { // file이름 받아 indoe할당받지 않고  저장, file이름도
 	int now_where = inode;
 	int check = find_file_inode(m,name,inode); // check는 이미있는 파일의 아이노드값
 	int new_direct,l=0,o=0;
@@ -1483,7 +1495,7 @@ void rm_file_inode (struct myfs * m,char name[4],int inode) { // file이름 받�
 			m->datablock[m->inodelist[inode].direct].d.files[i].inode = 0;
 			break;
 		}
-		//마지막 찾기,복사해놓고 비우기
+		//마지막 인덱스 찾기,복사해놓고 비우기
 	}
 
 	if(m->inodelist[inode].single_indirect){
@@ -1520,6 +1532,9 @@ void rm_file_inode (struct myfs * m,char name[4],int inode) { // file이름 받�
 			}
 		}
 	}
+		//싱글에서도 마지막 인덱스 찾기,복사해놓고 비우기
+	
+
 	n=0;
 	for(int i=0;i<19;i++){
 		if(strncmp(m->datablock[m->inodelist[inode].direct].d.files[i].name,name,4)==0){
@@ -1529,7 +1544,7 @@ void rm_file_inode (struct myfs * m,char name[4],int inode) { // file이름 받�
 			m->datablock[m->inodelist[inode].direct].d.files[i].inode = put_inode;
 			break;
 		}
-	}
+	}  //복사한 마지막 인자를 지워야 할 파일이 있는 부분에  붙여넣기
 	if(m->inodelist[inode].single_indirect){
 		while(1){
 			l=0;
@@ -1551,6 +1566,7 @@ void rm_file_inode (struct myfs * m,char name[4],int inode) { // file이름 받�
 			}
 		}
 	}
+	  //싱글에서도 찾아서 복사한 마지막 인자를 지워야 할 파일이 있는 부분에  붙여넣기
 }
 
 
@@ -1564,15 +1580,15 @@ short init_inode (struct myfs * m,int flag_d_f) { // 사이즈 없음 나중에�
 }
 
 int find_file_inode (struct myfs * m, char name[4],int inode) { // 중복검사에도 사용가능
-	//현재 디렉토리안에서만 같은 이름의 파일을 찾아서 그것의 아이노드
+	//현재 디렉토리안에서만 같은 이름의 파일을 찾아서 그것의 아이노드를 리턴
 	if(strncmp(".",name,4)==0) return m->datablock[m->inodelist[inode].direct].d.now.inode;
 	if(strncmp("..",name,4)==0) return m->datablock[m->inodelist[inode].direct].d.prev.inode;
 	for(int i=0 ; i<19 ; i++)
 	{
 		if(strncmp(m->datablock[m->inodelist[inode].direct].d.files[i].name,name,4)==0)
-			return m->datablock[m->inodelist[inode].direct].d.files[i].inode; // 그떄의 inode 출력
+			return m->datablock[m->inodelist[inode].direct].d.files[i].inode; // 그떄의 inode 를 리턴
 	}
-	if(m->inodelist[inode].single_indirect){
+	if(m->inodelist[inode].single_indirect){  //싱글에서 검사
 		block_list b={0};
 		int last_block,last_file;
 		int l=0,n=0;
@@ -1599,6 +1615,7 @@ int find_file_inode (struct myfs * m, char name[4],int inode) { // 중복검사�
 }
 
 void dir_block_array(struct myfs* m, block_list *b,struct file e[]){
+	//디렉토리의 진짜 데이터들이 들어있는 블록이 링크드로 연결되어있는 링크드리스트를 받아 그것을 따라 존재하는 모든 파일들의 이름과 아이노드를 배열e[]에 넣는 함수
 	int index=2;
 	strcpy(e[0].name,".");
 	strcpy(e[1].name,"..");
@@ -1625,6 +1642,7 @@ void dir_block_array(struct myfs* m, block_list *b,struct file e[]){
 }
 
 void dir_block_linked(struct myfs *m,block_list *b,int inode){
+	//디렉토리의 진짜 데이터를 가지고 있는 블록들만 링크드로 연결하는 함수
 	push(b,m->inodelist[inode].direct);
 	if(m->inodelist[inode].single_indirect){
 		int l=0,n=0;
@@ -1644,6 +1662,7 @@ void dir_block_linked(struct myfs *m,block_list *b,int inode){
 }
 
 void block_linked(struct myfs *m,block_list *b,int inode){
+	//일반 파일의 진짜 데이터를 가진 블록들만 링크드로 연결하는 함수
 	int l=0,n=0,fin,sn=0; // n은 모두 블럭에서 열을 담당
 	int s_num=0,k=0,sk=0,bcnt=0; // k는 모두 블럭에서 행을 담당
 	int db=0,o=0;
@@ -1691,7 +1710,7 @@ void block_linked(struct myfs *m,block_list *b,int inode){
 	}
 }
 
-void push(block_list* b,int n){
+void push(block_list* b,int n){       //block관련 링크드에 푸쉬하는 함수
 	block *tmp = (block*)calloc(1,sizeof(block));
 	tmp->num = n;
 	if(b->back==NULL){
@@ -1716,6 +1735,7 @@ int cmp(const void* a,const void* b){
 }
 
 int path_to_inode(char path[],struct myfs *m){
+	//맨 끝이 디렉토리로 되어있는 경로 문자열을 받아 맨끝 디렉토리의 아이노드를 리턴하는 함수, ls와 같은 곳에 쓰인다.
 	char c=0;
 	int now_tmp[100]={0},top_tmp=1;
 	int idx_name=0,len = strlen(path),now_len=1;
@@ -1795,6 +1815,7 @@ int path_to_inode(char path[],struct myfs *m){
 }
 
 int path_to_inode_make(struct myfs* m,char path[]){
+	//맨 끝이 새로 만들어질 파일이라는 가정 하에 맨 끝 직전 디렉토리의 아이노드를 리턴하는 함수
 	char c=0;
 	int now_tmp[100]={0},top_tmp=1;
 	int idx_name=0,len = strlen(path),now_len=1;
