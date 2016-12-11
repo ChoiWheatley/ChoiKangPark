@@ -37,6 +37,8 @@ void command_clear(char command_option[][15]);
 int cmp(const void* a,const void* b);
 int path_to_inode(char path[],struct myfs *);
 int path_to_inode_make(struct myfs* m,char path[]);
+void apply_plus_size (struct linked_list * li,struct myfs * m,int input_inode);
+void apply_minus_size (struct linked_list * li,struct myfs * m,int input_inode);
 
 ///////////////////////////////////// call 함수 ///////////////////////////////////
 void call_mypwd(char command_option[6][15],struct myfs* m);
@@ -156,25 +158,6 @@ int main(){
 				call_mystate(command_option, m);
 			else if(strcmp(command_option[0],"mytree")==0)
 				call_mytree(command_option,&my_list,m);
-			//for test
-			else if(strcmp(command_option[0],"myapplypsize")==0)
-				apply_plus_size(&my_list,&m,16);
-			else if(strcmp(command_option[0],"myapplymsize")==0)
-				apply_minus_size(&my_list,&m,16);
-			else if(strcmp(command_option[0], "myprintinode")==0)
-				printf("%dth inode added.\n", print_super_inode(&m));
-			else if(strcmp(command_option[0], "myprintblock")==0)
-				printf("%dth block added.\n", print_super_block(&m));
-			else if(strcmp(command_option[0], "myrminode")==0)
-				printf("%dth inode deleted.\n", remove_super_inode(option_integer[1], &m));
-			else if(strcmp(command_option[0], "myrmblock")==0)
-				printf("%dth block deleted.\n", remove_super_block(option_integer[1], &m));
-//			else if (strcmp(command_option[0], "mymanyinode")==0)
-//				print_many_inode(option_integer[1], &m);
-//			else if (strcmp(command_option[0], "mymanyblock")==0)
-//				print_many_block(option_integer[1], &m);
-//			else if(strcmp(command_option[0],"myshowfiles")==0)
-//				show_files(&m);
 			printf("\n");
 			command_clear(command_option);
 			fp = fopen("myfs.c","w");
@@ -437,12 +420,10 @@ void call_mytree(char command_option[6][15],struct linked_list * li,struct myfs 
 	linked_init(li);
 	get_tree(li,m,0);
 	printf("\n");
-	printf("option : %s\n",command_option[1]);
 
 	if(command_option[1][0] != '\0')
 	{
 		int len = strlen(command_option[1]);
-		//real
 		int i=0,j=0;
 		int count = 0;
 		int check = 0;
@@ -458,7 +439,6 @@ void call_mytree(char command_option[6][15],struct linked_list * li,struct myfs 
 			}
 			i++;
 		}
-		printf("count : %d\n",count);
 
 		char path[count+1];
 		while(j<count)
@@ -468,14 +448,11 @@ void call_mytree(char command_option[6][15],struct linked_list * li,struct myfs 
 			check++;
 		}
 		path[j]='\0';
-		printf("path : %s\n",path);
 
 		linked_find_node_by_name(li->head,path); // save_node;
 		//command_option의 상대경로든 절대경로든  마지막 디렉만남기는 함수
-		printf("path : %s\n",save_node->value);
 		if(m.inodelist[save_node->inode].d_f && strcmp(path,save_node->value)==0)
 		{
-			linked_print_tree_for_test(save_node);
 			printf("\n");
 			linked_print_tree(save_node,0);
 		}
@@ -484,7 +461,6 @@ void call_mytree(char command_option[6][15],struct linked_list * li,struct myfs 
 	}
 	else
 	{
-		linked_print_tree_for_test(li->head);
 		printf("\n");
 		linked_print_tree(li->head,0);
 	}
@@ -1046,9 +1022,6 @@ void call_mycp(struct linked_list * li,struct myfs* m,char command_option[6][15]
 	m->inodelist[void_inode].size=m->inodelist[first_file_inode].size;
 
 	apply_plus_size(li,m,void_inode);
-	/*for (int j = top-1; j >= 0; j--){
-	  m->inodelist[now[j]].size += m->inodelist[inode].size;
-	  }*/
 }
 void call_mycpto(struct myfs *m,char command_option[6][15]) {
 	int inode;
@@ -1179,7 +1152,6 @@ void call_mycpfrom(struct linked_list * li,char command_option[6][15],struct myf
 			if(sb==102&&db==102)break; //single이랑 double 다 차면 끝
 		}
 		m->inodelist[void_inode].size=size;
-		printf("size 전 inode ? :%d\n",void_inode);
 		apply_plus_size(li,m,void_inode);
 	}
 	fclose(fc);
@@ -1286,7 +1258,6 @@ struct time_now now_time (void) {
 	new.min = t->tm_min;
 	new.sec = t->tm_sec;
 
-	//	printf("%d/%d/%d %d:%d:%d",new.year,new.mon,new.day,new.hour,new.min,new.sec);
 	return new;
 }
 
@@ -1570,9 +1541,8 @@ void rm_file_inode (struct myfs * m,char name[4],int inode) { // file이름 받�
 }
 
 
-//빈 아이노드 숫자를 받아서 아이노드 리스트를 채우는것(단, 초기라서 direct뿐임)
-short init_inode (struct myfs * m,int flag_d_f) { // 사이즈 없음 나중에해야됌
-	//싱글 더블 추가여부
+//빈 아이노드 숫자를 받아서 아이노드 리스트를 채우는것
+short init_inode (struct myfs * m,int flag_d_f) { 
 	int void_inode=print_super_inode(m);
 	m->inodelist[void_inode].d_f=flag_d_f; // flag 1이면 dir 
 	m->inodelist[void_inode].n = now_time(); // 시간할당
@@ -1900,3 +1870,38 @@ int path_to_inode_make(struct myfs* m,char path[]){
 	}
 }
 
+void apply_plus_size (struct linked_list * li,struct myfs * m,int input_inode) {
+	linked_find_node_by_inode(li->head,input_inode);
+	struct linked_node * now_node = (struct linked_node *)malloc(sizeof(struct linked_node));
+	now_node = save_node;
+	save_node = li->head;
+	int add_size = m->inodelist[now_node->inode].size; // 현재파일의 사이즈를가져온다
+	while(now_node->parent != NULL_PTR)
+	{
+		while(now_node == now_node->parent->right_child)
+			now_node = now_node->parent; // 다음꺼로 이동
+
+		m->inodelist[now_node->parent->inode].size += add_size;
+		now_node = now_node->parent; // 다음꺼로 이동
+	}
+	m->inodelist[input_inode].n = now_time();
+	return ;
+}
+
+void apply_minus_size (struct linked_list * li,struct myfs * m,int input_inode) {
+	linked_find_node_by_inode(li->head,input_inode);
+	struct linked_node * now_node = (struct linked_node *)malloc(sizeof(struct linked_node));
+	now_node = save_node;
+	save_node = li->head;
+	int add_size = m->inodelist[now_node->inode].size; // 현재파일의 사이즈를가져온다
+	while(now_node->parent != NULL_PTR)
+	{
+		while(now_node == now_node->parent->right_child)
+			now_node = now_node->parent; // 다음꺼로 이동
+
+		m->inodelist[now_node->parent->inode].size -= add_size;
+		now_node = now_node->parent; // 다음꺼로 이동
+	}
+	m->inodelist[input_inode].n = now_time();
+	return ;
+}
