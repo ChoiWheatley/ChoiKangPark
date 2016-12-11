@@ -78,11 +78,9 @@ void linked_push_right_child (struct linked_list * li,struct myfs m, _Ty v,int i
 	tmp->right_child = New;
 
 	New->parent = tmp;
-//	free(tmp); // now가 있으니까 괜춘??
 	(li->size)++;
 }
-// pop left_child (rm)
-// pop right_child ( rmdir)
+
 void linked_pop (struct linked_list * li,_Ty name) {
 	if(li->size==1) return ; // 루트인데 pop하면 안됌
 	(li->size)--;
@@ -129,7 +127,6 @@ void linked_pop (struct linked_list * li,_Ty name) {
 			tmp->parent->right_child = tmp->right_child;
 			tmp->right_child->parent = tmp->parent;
 			free(tmp);
-			//tmp=NULL_PTR //?
 			return ;
 		}
 	}
@@ -163,7 +160,7 @@ void linked_print_tree(struct linked_node * node,int count) {
 		linked_print_tree(node->right_child,count);
 	}
 }
-
+/*
 void linked_print_tree_for_test(struct linked_node * node) {
 	if(node == NULL_PTR)
 		return ;
@@ -173,7 +170,7 @@ void linked_print_tree_for_test(struct linked_node * node) {
 	linked_print_tree_for_test(node->left_child);
 	linked_print_tree_for_test(node->right_child);
 }
-
+*/
 /*
 size_t linked_size(struct linked_list * li) {
 	return li->size;
@@ -186,14 +183,13 @@ bool linked_empty(struct linked_list * li) {
 
 void linked_find_node_by_inode (struct linked_node * node,int input_inode) {
 	if(node == NULL_PTR){
-		printf("null\n");
 		return ;
 	}
 
 	if(node->inode == input_inode)
 	{
-		printf("find_node_by_inode : %s %d\n",node->value,node->inode);//for test
-		printf("2.node의 주소값 0이면 안돼 ... : :%p\n",node);
+//		printf("find_node_by_inode : %s %d\n",node->value,node->inode);//for test
+//		printf("2.node의 주소값 0이면 안돼 ... : :%p\n",node);
 		save_node = node;
 		return ;
 	}
@@ -208,7 +204,7 @@ void linked_find_node_by_name (struct linked_node * node,_Ty input_name) {
 
 	if(strcmp(node->value,input_name)==0)
 	{
-		printf("find_node_by_name : %s %d\n",node->value,node->inode);//for test
+//		printf("find_node_by_name : %s %d\n",node->value,node->inode);//for test
 		save_node = node;
 		return ;
 	}
@@ -223,29 +219,22 @@ void linked_find_node_by_name (struct linked_node * node,_Ty input_name) {
 void get_tree (struct linked_list * li,struct myfs m,int now_dir_datablock) {
 	//현재 디렉토리의 데이터블록을 받는다.
 	int j=0;
-//	if(now_dir_datablock == 0) // 루트이라면 ㅎ
-//	int new_dir_inode = m.datablock[now_dir_datablock].d.files[j].inode;
-//	int new_dir_datablock = m.inodelist[new_dir_inode].direct;
 	//이전에 디렉토리라는걸 알아야함;
 	
 	int now_dir_inode = m.datablock[now_dir_datablock].d.now.inode; //현재 디렉의 inode
-	printf("now_dir_inode : %d\n",now_dir_inode);
+//	printf("now_dir_inode : %d\n",now_dir_inode);
 	if(/*m.inodelist[now_dir_inode].d_f && */m.datablock[now_dir_datablock].d.files[0].name[0] != '\0') // 현재가 디렉토리이고 그안에 뭔가 들어있다면 left_push
 		//그안에 뭔가 없더라도 해야지 // 빈 디렉토리라도....
 		//현재 수정이 필요한부분은 위의 if문이다
 	{
-		printf("left push 각\n");
-//		printf("left push 되는 애 이름 :%s\n",m.datablock[now_dir_datablock].d.now.name);
-//		linked_push_left_child(li,m.datablock[now_dir_datablock].d.now.name,m.datablock[now_dir_datablock].d.now.inode);
-		printf("left push 되는 애 이름 :%s\n",m.datablock[now_dir_datablock].d.files[0].name);
+//		printf("left push 각\n");
+//		printf("left push 되는 애 이름 :%s\n",m.datablock[now_dir_datablock].d.files[0].name);
 		linked_push_left_child(li,m.datablock[now_dir_datablock].d.files[0].name,m.datablock[now_dir_datablock].d.files[0].inode);
 	}
 
-//	while(m.datablock[now_dir_datablock].d.files[j].name[0] != '\0' && j<19) // left_push후 right_push // 19인거....?
 	while(m.datablock[now_dir_datablock].d.files[j].name[0] != '\0' && j<19) // left_push후 right_push // 19인거....?
 	{
-		printf("\nwhile문\n");
-		printf("datablock : %d\n",now_dir_datablock);
+//		printf("datablock : %d\n",now_dir_datablock);
 		if(m.inodelist[m.datablock[now_dir_datablock].d.files[j].inode].d_f) // 파일이면 오른쪽에 그대로 계속 넣기(바뀐듯?디렉으로)
 		{
 			int new_dir_inode = m.datablock[now_dir_datablock].d.files[j].inode;
@@ -255,21 +244,20 @@ void get_tree (struct linked_list * li,struct myfs m,int now_dir_datablock) {
 
 			//linked_find_node_by_inode(li->head,new_dir_inode); // !! 
 			//li->now_dir = save_node;
-			printf("\n재귀\n");
 			if(j !=0 ) // 나는 rightpush하고.. (나는 디렉토리)  j==0이면 무한디렉생성의 경우?
 			{
-				printf("\nsearch 가기전에 now_dir_inode : %d\n",now_dir_inode);
+//				printf("\nsearch 가기전에 now_dir_inode : %d\n",now_dir_inode);
 				linked_find_node_by_inode(li->head,now_dir_inode); //우변을 이용하여 순회를 하여 맞는 구조체를 리턴하여 해야할듯
 				li->search_dir = save_node;
 				save_node = li->head;
-				printf("li->search_dir : %p,null :  %p\n",li->search_dir,NULL_PTR);
+//				printf("li->search_dir : %p,null :  %p\n",li->search_dir,NULL_PTR);
 				if(li->search_dir == NULL_PTR) // 만약 이게 true라면 get_tree함수가 위에서 틀린거임;
 				{
 					printf("상위 디렉토리가 없습니다.get_tree함수에서 입력이 잘못된거 같습니다\n");
 					return ;
 				}
-				printf("right push 각 ('나' 디렉토리는 넣고가야지) \n");
-				printf("right push 되는 애 이름 %s\n",m.datablock[now_dir_datablock].d.files[j].name);
+//				printf("right push 각 ('나' 디렉토리는 넣고가야지) \n");
+//				printf("right push 되는 애 이름 %s\n",m.datablock[now_dir_datablock].d.files[j].name);
 				linked_push_right_child(li,m,m.datablock[now_dir_datablock].d.files[j].name,m.datablock[now_dir_datablock].d.files[j].inode);
 			}
 			j++;
@@ -278,17 +266,17 @@ void get_tree (struct linked_list * li,struct myfs m,int now_dir_datablock) {
 				return ;
 			if(m.inodelist[m.datablock[now_dir_datablock].d.files[j].inode].d_f) // 디렉이면 다시검사
 			{
-				printf("\n\ncontinue각\n\n");
-				printf("j :%d\n",j);
-				printf("datablock : %d\n",now_dir_datablock);
+//				printf("\n\ncontinue각\n\n");
+//				printf("j :%d\n",j);
+//				printf("datablock : %d\n",now_dir_datablock);
 				continue;
 			}
 		}
-		printf("\nsearch 가기전에 now_dir_inode : %d\n",now_dir_inode);
+//		printf("\nsearch 가기전에 now_dir_inode : %d\n",now_dir_inode);
 		linked_find_node_by_inode(li->head,now_dir_inode); //우변을 이용하여 순회를 하여 맞는 구조체를 리턴하여 해야할듯
 		li->search_dir = save_node;
 		save_node = li->head;
-		printf("li->search_dir : %p,null :  %p\n",li->search_dir,NULL_PTR);
+//		printf("li->search_dir : %p,null :  %p\n",li->search_dir,NULL_PTR);
 		if(li->search_dir == NULL_PTR) // 만약 이게 true라면 get_tree함수가 위에서 틀린거임;
 		{
 			printf("상위 디렉토리가 없습니다.get_tree함수에서 입력이 잘못된거 같습니다\n");
@@ -298,114 +286,11 @@ void get_tree (struct linked_list * li,struct myfs m,int now_dir_datablock) {
 //			j--;
 		if((!m.inodelist[m.datablock[now_dir_datablock].d.files[j].inode].d_f) && j!=0) // 파일이면 오른쪽에 그대로 계속 넣기
 		{
-			printf("right push 각 (나머지 파일들 마저 넣어야지) \n");
-			printf("right push 되는 애 이름 %s\n",m.datablock[now_dir_datablock].d.files[j].name);
+//			printf("right push 각 (나머지 파일들 마저 넣어야지) \n");
+//			printf("right push 되는 애 이름 %s\n",m.datablock[now_dir_datablock].d.files[j].name);
 			linked_push_right_child(li,m,m.datablock[now_dir_datablock].d.files[j].name,m.datablock[now_dir_datablock].d.files[j].inode);
 		}
 		j++;
 	}
-	/*
-	if(exist single,i.s)
-		넣는다
-	}
-	*/
-//	get_tree(li,m,now_dir_datablock);
-	//li->now_dir = 
 }
 //가져오기를 위한 부분끝
-
-int size_plus(int add_size) {
-	static int size;
-	return size + add_size;
-}
-
-void apply_plus_size (struct linked_list * li,struct myfs * m,int input_inode) {
-	printf("apply _ plus _ size 의 인자로들어온 inode %d\n",input_inode);
-	linked_find_node_by_inode(li->head,input_inode);
-	struct linked_node * now_node = (struct linked_node *)malloc(sizeof(struct linked_node));
-	now_node = save_node;
-	save_node = li->head;
-	printf("%s %d\n",now_node->value,now_node->inode);
-	int add_size = m->inodelist[now_node->inode].size; // 현재파일의 사이즈를가져온다
-	while(now_node->parent != NULL_PTR)
-	{
-		while(now_node == now_node->parent->right_child)
-			now_node = now_node->parent; // 다음꺼로 이동
-
-		m->inodelist[now_node->parent->inode].size += add_size;
-		now_node = now_node->parent; // 다음꺼로 이동
-	}
-	return ;
-}
-
-void apply_minus_size (struct linked_list * li,struct myfs * m,int input_inode) {
-	linked_find_node_by_inode(li->head,input_inode);
-	struct linked_node * now_node = (struct linked_node *)malloc(sizeof(struct linked_node));
-	now_node = save_node;
-	save_node = li->head;
-	printf("%s %d\n",now_node->value,now_node->inode);
-	int add_size = m->inodelist[now_node->inode].size; // 현재파일의 사이즈를가져온다
-	while(now_node->parent != NULL_PTR)
-	{
-		while(now_node == now_node->parent->right_child)
-			now_node = now_node->parent; // 다음꺼로 이동
-
-		m->inodelist[now_node->parent->inode].size -= add_size;
-		now_node = now_node->parent; // 다음꺼로 이동
-	}
-	return ;
-}
-
-/*
-int main(void) {
-	int T,i;
-	int inode;
-	struct linked_list my_list;
-	struct myfs m;
-	linked_init(&my_list);
-	printf("order의 갯수:");
-	scanf("%d", &T);
-	printf("명령어(push_left_child push_right_child pop print_tree) 이름 inode 순서대로입력\n");
-
-
-		for (i = 0; i < T; i++)
-	{
-		char order[15];
-		char name[5];
-		scanf("%s", order);
-		if (strcmp("push_left_child", order) == 0) {
-			scanf("%s",name);
-			scanf("%d", &inode);
-			linked_push_left_child(&my_list,name,inode);
-			printf("%s %d\n",(&my_list)->now_dir->parent->left_child->value,(&my_list)->now_dir->parent->left_child->inode);
-		}
-		else if (strcmp("push_right_child", order) == 0) {
-			scanf("%s",name);
-			scanf("%d", &inode);
-	//		(&my_list)->search_dir = linked_find_node_by_inode((&my_list)->head,(&my_list)->now_dir->inode); //우변을 이용하여 순회를 하여 맞는 구조체를 리턴하여 해야할듯
-			linked_push_right_child(&my_list,m,name,inode);
-	//		printf("%s %d\n",(&my_list)->now_dir->right_child->value,(&my_list)->now_dir->right_child->inode);
-		}
-		else if (strcmp("pop", order) == 0) {
-			scanf("%s",name);
-			linked_pop(&my_list,name);
-		}
-		else if (strcmp("print_tree",order) == 0) {
-			linked_print_tree((&my_list)->head);
-		}
-		else if (strcmp("size", order) == 0) {
-			printf("%d\n", linked_size(&my_list));
-		}
-		else if(strcmp("empty", order) == 0) {
-			printf("%d\n", linked_empty(&my_list));
-		}
-		else if(strcmp("front", order) == 0) {
-			printf("%d\n", linked_front(&my_list));
-		}
-		else if (strcmp("back", order) == 0) {
-			printf("%d\n", linked_back(&my_list));
-		}
-	}
-	return 0;
-}
-*/
